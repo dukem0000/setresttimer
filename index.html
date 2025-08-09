@@ -10,7 +10,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Rest Timer" />
   <meta name="theme-color" content="#0b1220" />
-  <!-- <link rel="apple-touch-icon" href="/icon-180.png"> -->
 
   <style>
     :root{
@@ -77,8 +76,22 @@
     .btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
     .btn-emerald:hover { background: rgba(52,211,153,.26); }
 
-    .controls { display:flex; gap:12px; align-items:center; margin-top: 12px; }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      align-items: center;
+      margin-top: 12px;
+    }
     .controls.hidden { display:none; }
+    .controls .btn {
+      opacity: 0.8;
+      background: rgba(255,255,255,0.08);
+    }
+    .controls .btn.btn-emerald {
+      background: rgba(52,211,153,.15);
+      border-color: rgba(52,211,153,.3);
+    }
 
     .flash { position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none; }
     .flash.show { animation: flash 1.4s ease forwards; }
@@ -124,11 +137,9 @@
   </div>
 
   <script>
-  // --- State ---
   let duration = 0, remaining = 0, running = false, completed = false;
   let endTime = null, ticker = null, wakeLock = null;
 
-  // --- Elements ---
   const timeEl = document.getElementById('time');
   const ringProg = document.getElementById('ringProg');
   const controlsEl = document.getElementById('controls');
@@ -143,31 +154,23 @@
   const btn90 = document.getElementById('btn-90');
   const btn120 = document.getElementById('btn-120');
 
-  // Ring math
   const RADIUS = 110;
-  const CIRC = 2 * Math.PI * RADIUS; // ~691
+  const CIRC = 2 * Math.PI * RADIUS;
 
-  // Utils
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
   function updateUI() {
     timeEl.textContent = fmt(remaining);
     const progress = duration > 0 ? (duration - remaining) / duration : 0;
     ringProg.style.strokeDasharray = (CIRC * progress) + ' ' + CIRC;
-
     controlsEl.classList.toggle('hidden', duration === 0);
     pauseResumeBtn.disabled = completed;
-
     if (running) { pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause'; }
     else         { pauseResumeIcon.textContent='▶';  pauseResumeText.textContent='Resume'; }
   }
 
   function clearTicker(){ if (ticker){ clearInterval(ticker); ticker=null; } }
-
-  function clearFlash(){
-    flashEl.classList.remove('show');
-    flashEl.classList.remove('loop');
-  }
+  function clearFlash(){ flashEl.classList.remove('show'); flashEl.classList.remove('loop'); }
 
   function tick() {
     const now = Date.now();
@@ -178,11 +181,8 @@
       running = false;
       completed = true;
       liveEl.textContent = 'Time up';
-
-      // Start continuous flashing until user interacts
       clearFlash();
       flashEl.classList.add('loop');
-
       beep();
       releaseWakeLock();
       updateUI();
@@ -190,72 +190,45 @@
   }
 
   async function requestWakeLock(){
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', ()=>{});
-      }
-    } catch (e) {}
+    try { if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', ()=>{});
+    }} catch (e) {}
   }
-  function releaseWakeLock(){
-    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e){}
-  }
+  function releaseWakeLock(){ try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e){} }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && running) requestWakeLock();
   });
 
   function startWith(s) {
-    clearTicker();
-    clearFlash();
-    duration = s;
-    remaining = s;
-    completed = false;
-    running = true;
+    clearTicker(); clearFlash();
+    duration = s; remaining = s; completed = false; running = true;
     endTime = Date.now() + s * 1000;
     liveEl.textContent = '';
     controlsEl.classList.remove('hidden');
-    updateUI();
-    tick();
+    updateUI(); tick();
     ticker = setInterval(tick, 250);
     requestWakeLock();
   }
-
   function pauseResume() {
     if (completed) return;
     clearFlash();
-    if (running) {
-      running = false;
-      clearTicker();
-      releaseWakeLock();
-    } else {
-      running = true;
-      endTime = Date.now() + remaining * 1000;
-      ticker = setInterval(tick, 250);
-      requestWakeLock();
-    }
+    if (running) { running = false; clearTicker(); releaseWakeLock(); }
+    else { running = true; endTime = Date.now() + remaining * 1000; ticker = setInterval(tick, 250); requestWakeLock(); }
     updateUI();
   }
-
   function reset() {
-    clearTicker();
-    clearFlash();
-    duration = 0;
-    remaining = 0;
-    running = false;
-    completed = false;
-    liveEl.textContent = '';
-    releaseWakeLock();
-    updateUI();
+    clearTicker(); clearFlash();
+    duration = 0; remaining = 0; running = false; completed = false;
+    liveEl.textContent = ''; releaseWakeLock(); updateUI();
   }
 
-  // Gentle beep using Web Audio (works in iOS after a user gesture)
   function beep() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const o = ctx.createOscillator();
       const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 880;
+      o.type = 'sine'; o.frequency.value = 880;
       o.connect(g); g.connect(ctx.destination);
       g.gain.setValueAtTime(0.0001, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
@@ -264,21 +237,18 @@
     } catch(e) {}
   }
 
-  // Wire up
   btn60.addEventListener('click', ()=> startWith(60));
   btn90.addEventListener('click', ()=> startWith(90));
   btn120.addEventListener('click', ()=> startWith(120));
   pauseResumeBtn.addEventListener('click', pauseResume);
   resetBtn.addEventListener('click', reset);
 
-  // Any interaction clears the flashing
   ['click','touchstart','keydown'].forEach(ev =>
     window.addEventListener(ev, clearFlash, { passive: true })
   );
 
-  // Optional desktop shortcuts
   window.addEventListener('keydown', (e)=>{
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
     if (e.code === 'Digit1') startWith(60);
     if (e.code === 'Digit2') startWith(90);
     if (e.code === 'Digit3') startWith(120);
