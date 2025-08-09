@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Rest Timer" />
   <meta name="theme-color" content="#0b1220" />
+  <!-- <link rel="apple-touch-icon" href="/icon-180.png"> -->
 
   <style>
     :root{
@@ -93,6 +94,25 @@
       border-color: rgba(52,211,153,.3);
     }
 
+    .bottomButtons {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+    }
+    .circle-btn {
+      width: 54px; height: 54px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: bold; color: var(--text);
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.22);
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+      transition: background .15s ease, transform .04s ease;
+    }
+    .circle-btn:hover { background: rgba(255,255,255,0.14); }
+    .circle-btn:active { transform: scale(0.96); }
+
     .flash { position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none; }
     .flash.show { animation: flash 1.4s ease forwards; }
     .flash.loop { animation: flash 1.2s ease-in-out infinite; }
@@ -130,6 +150,11 @@
           <span id="pauseResumeText" style="margin-left:8px;">Pause</span>
         </button>
         <button class="btn" id="reset">⟲<span style="margin-left:8px;">Reset</span></button>
+      </div>
+
+      <div class="bottomButtons">
+        <button class="circle-btn" onclick="window.location='whoop://'">W</button>
+        <button class="circle-btn" onclick="window.location='mobilenotes://'">📝</button>
       </div>
 
       <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
@@ -191,7 +216,7 @@
     ringProg.style.strokeDasharray = (CIRC * progress) + ' ' + CIRC;
 
     // Update displayed seconds only when whole second changes
-    const whole = Math.ceil(remainingSec); // typical countdown feel
+    const whole = Math.ceil(remainingSec);
     if (whole !== lastShownWhole) {
       lastShownWhole = whole;
       remaining = whole;
@@ -248,7 +273,6 @@
     if (running) {
       running = false;
       cancelRAF();
-      // Keep remaining as lastShownWhole
       releaseWakeLock();
     } else {
       running = true;
