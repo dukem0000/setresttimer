@@ -2,93 +2,291 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Glassy Interval Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Set Rest Timer</title>
+
+  <!-- iOS web app feel -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Rest Timer" />
+  <meta name="theme-color" content="#0b1220" />
+  <!-- <link rel="apple-touch-icon" href="/icon-180.png"> -->
+
   <style>
     :root{
       --bg1: radial-gradient(1200px 800px at 20% -10%, rgba(125,211,252,0.2), transparent);
       --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
-      --glass: rgba(255,255,255,0.10);
-      --text: rgba(255,255,255,0.90);
-      --emeraldA: rgba(52,211,153,0.85);
+      --card: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --ring: rgba(52,211,153,.85);
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box }
     html, body {
-      height: 100%; margin: 0; font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: var(--text);
+      height: 100%;
+      margin: 0;
+      font-family: ui-rounded, -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
       background: var(--bg1), var(--bg2), #0b1220;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      overscroll-behavior: none;
     }
-    .page{ min-height: 100%; display: grid; place-items: center; padding: 24px; position: relative; }
-    .card{ width: 100%; max-width: 420px; background: var(--glass); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; backdrop-filter: blur(18px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.45); padding: 24px; }
-    .title{ font-size: 20px; font-weight: 700; text-align: center; }
-    .ringWrap{ position: relative; width: 220px; height: 220px; margin: 18px auto; }
-    .time{ position:absolute; inset:0; display:grid; place-items:center; font-size:48px; font-weight:700; font-variant-numeric: tabular-nums; }
-    .grid3{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
-    .btn{ border-radius: 14px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.10); color: var(--text); padding: 12px 14px; text-align: center; font-weight: 600; cursor: pointer; backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); user-select: none; }
-    .btn:hover{ background: rgba(255,255,255,.14); }
-    .btn-emerald{ background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
-    .btn-emerald:hover{ background: rgba(52,211,153,.26); }
-    .controls{ display:flex; gap:12px; align-items:center; margin-top: 12px; }
-    .controls.hidden { display: none; }
-    .flash{ position: fixed; inset:0; background: rgba(52,211,153,.7); pointer-events:none; opacity:0; animation: none; }
-    .flash.show{ animation: flash 1.4s ease forwards; }
-    @keyframes flash{ 0%{opacity:0;} 20%{opacity:.85;} 50%{opacity:.2;} 80%{opacity:.85;} 100%{opacity:0;} }
-    .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+    .page {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+      position: relative;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 40px -12px rgba(0,0,0,.45);
+      padding: 22px 22px 18px;
+    }
+    .title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+
+    .ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto; }
+    .time {
+      position:absolute; inset:0; display:grid; place-items:center;
+      font-size: 56px; font-weight: 800; letter-spacing: .5px; font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 0 rgba(0,0,0,.2);
+    }
+
+    .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
+    .btn {
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      padding: 12px 14px;
+      text-align: center;
+      font-weight: 650;
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+      transition: transform .04s ease, background .15s ease, border-color .15s ease;
+      cursor: pointer;
+    }
+    .btn:hover   { background: rgba(255,255,255,.14); }
+    .btn:active  { transform: scale(.99); }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed }
+    .btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
+    .btn-emerald:hover { background: rgba(52,211,153,.26); }
+
+    .controls { display:flex; gap:12px; align-items:center; margin-top: 12px; }
+    .controls.hidden { display:none; }
+
+    .flash { position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none; }
+    .flash.show { animation: flash 1.4s ease forwards; }
+    .flash.loop { animation: flash 1.2s ease-in-out infinite; }
+    @keyframes flash{ 0%{opacity:0} 20%{opacity:.85} 50%{opacity:.2} 80%{opacity:.85} 100%{opacity:0} }
+
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
   </style>
 </head>
 <body>
   <div class="page">
     <div class="flash" id="flash"></div>
+
     <div class="card">
       <div class="title">Set Rest Timer</div>
+
       <div class="ringWrap">
-        <svg id="ring" width="220" height="220">
-          <circle cx="110" cy="110" r="105" stroke="rgba(255,255,255,.15)" stroke-width="10" fill="none"/>
-          <circle id="ringProg" cx="110" cy="110" r="105" stroke="currentColor" stroke-width="10" fill="none" stroke-linecap="round" transform="rotate(-90 110 110)" style="color: rgba(52,211,153,.85); stroke-dasharray: 0 659"/>
+        <svg width="240" height="240" aria-hidden="true">
+          <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
+          <circle id="ringProg" cx="120" cy="120" r="110" stroke="currentColor" stroke-width="10" fill="none"
+                  stroke-linecap="round" transform="rotate(-90 120 120)"
+                  style="color: var(--ring); stroke-dasharray: 0 691"/>
         </svg>
         <div class="time" id="time">0:00</div>
       </div>
-      <div class="grid3" style="margin-bottom:12px;">
-        <button class="btn" id="btn-60">1:00</button>
-        <button class="btn" id="btn-90">1:30</button>
-        <button class="btn" id="btn-120">2:00</button>
+
+      <div class="grid3">
+        <button class="btn" id="btn-60"  aria-label="Start one minute">1:00</button>
+        <button class="btn" id="btn-90"  aria-label="Start one minute thirty">1:30</button>
+        <button class="btn" id="btn-120" aria-label="Start two minutes">2:00</button>
       </div>
+
       <div class="controls hidden" id="controls">
-        <button class="btn btn-emerald" id="pauseResume"><span id="pauseResumeIcon">▐▐</span><span id="pauseResumeText" style="margin-left:8px;">Pause</span></button>
+        <button class="btn btn-emerald" id="pauseResume">
+          <span id="pauseResumeIcon">▐▐</span>
+          <span id="pauseResumeText" style="margin-left:8px;">Pause</span>
+        </button>
         <button class="btn" id="reset">⟲<span style="margin-left:8px;">Reset</span></button>
       </div>
+
       <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
     </div>
   </div>
-<script>
-let duration = 0, remaining = 0, running = false, completed = false, endTime = null, ticker = null;
-const timeEl = document.getElementById('time'), ringProg = document.getElementById('ringProg'), liveEl = document.getElementById('live'), flashEl = document.getElementById('flash'), controlsEl = document.getElementById('controls');
-const pauseResumeBtn = document.getElementById('pauseResume'), pauseResumeIcon = document.getElementById('pauseResumeIcon'), pauseResumeText = document.getElementById('pauseResumeText'), resetBtn = document.getElementById('reset');
-const btn60 = document.getElementById('btn-60'), btn90 = document.getElementById('btn-90'), btn120 = document.getElementById('btn-120');
-const radius = 105, circumference = 2 * Math.PI * radius;
-const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-function updateUI(){
-  timeEl.textContent = fmt(remaining);
-  const progress = duration>0 ? (duration-remaining)/duration : 0;
-  ringProg.style.strokeDasharray = (circumference*progress)+' '+circumference;
-  controlsEl.classList.toggle('hidden', duration===0);
-  pauseResumeBtn.disabled = completed;
-  if (running){ pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause'; } else { pauseResumeIcon.textContent='▶'; pauseResumeText.textContent='Resume'; }
-}
-function clearTicker(){ if(ticker){ clearInterval(ticker); ticker=null; } }
-function tick(){
-  const now = Date.now();
-  const secs = Math.max(0, Math.round((endTime-now)/1000));
-  if (secs!==remaining){ remaining=secs; updateUI(); }
-  if (secs<=0){ clearTicker(); running=false; completed=true; liveEl.textContent='Time up'; flashEl.classList.remove('show'); void flashEl.offsetWidth; flashEl.classList.add('show'); updateUI(); }
-}
-function startWith(s){ clearTicker(); duration=s; remaining=s; completed=false; running=true; endTime=Date.now()+s*1000; liveEl.textContent=''; updateUI(); ticker=setInterval(tick,250); }
-function pauseResume(){ if(completed)return; if(running){ running=false; clearTicker(); } else { running=true; endTime=Date.now()+remaining*1000; ticker=setInterval(tick,250); } updateUI(); }
-function reset(){ clearTicker(); duration=0; remaining=0; running=false; completed=false; liveEl.textContent=''; updateUI(); }
-btn60.addEventListener('click',()=>startWith(60));
-btn90.addEventListener('click',()=>startWith(90));
-btn120.addEventListener('click',()=>startWith(120));
-pauseResumeBtn.addEventListener('click',pauseResume); resetBtn.addEventListener('click',reset);
-updateUI();
-</script>
+
+  <script>
+  // --- State ---
+  let duration = 0, remaining = 0, running = false, completed = false;
+  let endTime = null, ticker = null, wakeLock = null;
+
+  // --- Elements ---
+  const timeEl = document.getElementById('time');
+  const ringProg = document.getElementById('ringProg');
+  const controlsEl = document.getElementById('controls');
+  const pauseResumeBtn = document.getElementById('pauseResume');
+  const pauseResumeIcon = document.getElementById('pauseResumeIcon');
+  const pauseResumeText = document.getElementById('pauseResumeText');
+  const resetBtn = document.getElementById('reset');
+  const flashEl = document.getElementById('flash');
+  const liveEl = document.getElementById('live');
+
+  const btn60 = document.getElementById('btn-60');
+  const btn90 = document.getElementById('btn-90');
+  const btn120 = document.getElementById('btn-120');
+
+  // Ring math
+  const RADIUS = 110;
+  const CIRC = 2 * Math.PI * RADIUS; // ~691
+
+  // Utils
+  const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+
+  function updateUI() {
+    timeEl.textContent = fmt(remaining);
+    const progress = duration > 0 ? (duration - remaining) / duration : 0;
+    ringProg.style.strokeDasharray = (CIRC * progress) + ' ' + CIRC;
+
+    controlsEl.classList.toggle('hidden', duration === 0);
+    pauseResumeBtn.disabled = completed;
+
+    if (running) { pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause'; }
+    else         { pauseResumeIcon.textContent='▶';  pauseResumeText.textContent='Resume'; }
+  }
+
+  function clearTicker(){ if (ticker){ clearInterval(ticker); ticker=null; } }
+
+  function clearFlash(){
+    flashEl.classList.remove('show');
+    flashEl.classList.remove('loop');
+  }
+
+  function tick() {
+    const now = Date.now();
+    const secs = Math.max(0, Math.round((endTime - now)/1000));
+    if (secs !== remaining) { remaining = secs; updateUI(); }
+    if (secs <= 0) {
+      clearTicker();
+      running = false;
+      completed = true;
+      liveEl.textContent = 'Time up';
+
+      // Start continuous flashing until user interacts
+      clearFlash();
+      flashEl.classList.add('loop');
+
+      beep();
+      releaseWakeLock();
+      updateUI();
+    }
+  }
+
+  async function requestWakeLock(){
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', ()=>{});
+      }
+    } catch (e) {}
+  }
+  function releaseWakeLock(){
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e){}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running) requestWakeLock();
+  });
+
+  function startWith(s) {
+    clearTicker();
+    clearFlash();
+    duration = s;
+    remaining = s;
+    completed = false;
+    running = true;
+    endTime = Date.now() + s * 1000;
+    liveEl.textContent = '';
+    controlsEl.classList.remove('hidden');
+    updateUI();
+    tick();
+    ticker = setInterval(tick, 250);
+    requestWakeLock();
+  }
+
+  function pauseResume() {
+    if (completed) return;
+    clearFlash();
+    if (running) {
+      running = false;
+      clearTicker();
+      releaseWakeLock();
+    } else {
+      running = true;
+      endTime = Date.now() + remaining * 1000;
+      ticker = setInterval(tick, 250);
+      requestWakeLock();
+    }
+    updateUI();
+  }
+
+  function reset() {
+    clearTicker();
+    clearFlash();
+    duration = 0;
+    remaining = 0;
+    running = false;
+    completed = false;
+    liveEl.textContent = '';
+    releaseWakeLock();
+    updateUI();
+  }
+
+  // Gentle beep using Web Audio (works in iOS after a user gesture)
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 880;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      o.start(); o.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  }
+
+  // Wire up
+  btn60.addEventListener('click', ()=> startWith(60));
+  btn90.addEventListener('click', ()=> startWith(90));
+  btn120.addEventListener('click', ()=> startWith(120));
+  pauseResumeBtn.addEventListener('click', pauseResume);
+  resetBtn.addEventListener('click', reset);
+
+  // Any interaction clears the flashing
+  ['click','touchstart','keydown'].forEach(ev =>
+    window.addEventListener(ev, clearFlash, { passive: true })
+  );
+
+  // Optional desktop shortcuts
+  window.addEventListener('keydown', (e)=>{
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.code === 'Digit1') startWith(60);
+    if (e.code === 'Digit2') startWith(90);
+    if (e.code === 'Digit3') startWith(120);
+    if (e.code === 'Space') { e.preventDefault(); if (duration>0) pauseResume(); }
+    if (e.code === 'KeyR') reset();
+  });
+
+  updateUI();
+  </script>
 </body>
 </html>
