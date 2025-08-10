@@ -46,12 +46,12 @@ html, body {
   border-radius: 22px;
   backdrop-filter: blur(18px);
   box-shadow: 0 10px 40px -12px rgba(0,0,0,.45);
-  padding: 22px 22px 18px;
+  padding: 20px 22px 18px;
   transition: all 0.4s ease;
 }
-.title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
 
-.ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto 8px; }
+/* Ring + time */
+.ringWrap { position: relative; width: 240px; height: 240px; margin: 8px auto 8px; }
 .time {
   position:absolute; inset:0; display:grid; place-items:center;
   font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
@@ -59,8 +59,27 @@ html, body {
 }
 .time.hidden { display:none; }
 
+/* Breathing animation (shows when time is hidden) */
+.breath {
+  position:absolute; inset:0; display:grid; place-items:center;
+  pointer-events:none; opacity:0; transition: opacity .25s ease;
+}
+.breath.show { opacity:1; }
+.breath-dot {
+  width: 78px; height: 78px; border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.15);
+  animation: breathe 8s ease-in-out infinite; /* 4s in, 4s out */
+}
+@keyframes breathe {
+  0%   { transform: scale(0.65); opacity: .85; }
+  50%  { transform: scale(1.00); opacity: 1;    }
+  100% { transform: scale(0.65); opacity: .85; }
+}
+
 /* Eye toggle under ring */
-.eye-row { display:flex; justify-content:center; align-items:center; margin-bottom: 8px; }
+.eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
 .eye-btn {
   width: 36px; height: 36px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
@@ -124,17 +143,17 @@ html, body {
 .circle-btn:hover { background: rgba(255,255,255,0.2); }
 .circle-btn:active { transform: scale(0.96); }
 
-/* Icons in circular buttons use SVG so they stay perfectly centered */
+/* Icons in circular buttons via SVG to stay perfectly centered */
 .icon { width: 26px; height: 26px; display:block; }
 .icon-reset { width: 26px; height: 26px; }
 
-/* Controls styling (slightly more subtle) */
+/* Controls stylings */
 .controls .circle-btn { opacity: 0.8; }
 .controls .circle-btn.btn-emerald { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3); }
 
 /* Bottom Whoop / Notes */
 .bottomButtons { margin-top: 18px; display: flex; justify-content: center; gap: 18px; }
-.whoop-btn { font-size: 26px; font-weight: 800; color: var(--text); } /* Bigger W again */
+.whoop-btn { font-size: 26px; font-weight: 800; color: var(--text); }
 .notes-icon {
   width: 28px; height: 28px;
   border-radius: 4px;
@@ -157,15 +176,20 @@ html, body {
 <body>
 <div class="page">
   <div class="card" id="card">
-    <div class="title">Set Rest Timer</div>
-
+    <!-- Ring -->
     <div class="ringWrap">
       <svg width="240" height="240" aria-hidden="true">
         <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
         <circle id="ringProg" cx="120" cy="120" r="110" stroke="var(--ring-neutral)" stroke-width="10" fill="none"
                 stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
       </svg>
+
       <div class="time" id="time">0:00</div>
+
+      <!-- Breathing animation (visible when time hidden) -->
+      <div class="breath" id="breath">
+        <div class="breath-dot"></div>
+      </div>
     </div>
 
     <!-- Eye toggle -->
@@ -178,14 +202,15 @@ html, body {
       </button>
     </div>
 
+    <!-- Presets -->
     <div class="grid3">
       <button class="btn" id="btn-60">1:00</button>
       <button class="btn" id="btn-90">1:30</button>
       <button class="btn" id="btn-120">2:00</button>
     </div>
 
+    <!-- Controls -->
     <div class="controls" id="controls">
-      <!-- Pause / Play -->
       <button class="circle-btn btn-emerald" id="pauseResume" aria-label="Pause or resume">
         <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="6.5" y="5" width="3.5" height="14" rx="1.2"></rect>
@@ -196,7 +221,6 @@ html, body {
         </svg>
       </button>
 
-      <!-- Reset -->
       <button class="circle-btn" id="reset" aria-label="Reset">
         <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 12a9 9 0 1 0 3-6.7"></path>
@@ -205,6 +229,7 @@ html, body {
       </button>
     </div>
 
+    <!-- External app shortcuts -->
     <div class="bottomButtons">
       <button class="circle-btn whoop-btn" id="whoopBtn" aria-label="Open Whoop">W</button>
       <button class="circle-btn" id="notesBtn" aria-label="Open Notes"><div class="notes-icon"></div></button>
@@ -220,6 +245,7 @@ let endTime=null, wakeLock=null, rafId=null, lastShownWhole=null;
 let showTime=true;
 
 const timeEl=document.getElementById('time');
+const breathEl=document.getElementById('breath');
 const ringProg=document.getElementById('ringProg');
 const controlsEl=document.getElementById('controls');
 const pauseResumeBtn=document.getElementById('pauseResume');
@@ -237,13 +263,16 @@ const clamp01=x=>Math.max(0,Math.min(1,x));
 function setRingColor(color){ ringProg.setAttribute('stroke', color); }
 
 function updateUI(){
-  // time visibility + eye state
+  // time visibility + breathing
   timeEl.classList.toggle('hidden', !showTime);
+  breathEl.classList.toggle('show', !showTime);
   eyeBtn.classList.toggle('active', !showTime);
 
-  // progress & icons
+  // progress
   const progress=duration>0?(duration-remaining)/duration:0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
+
+  // icons
   if(running){ pauseIcon.style.display='block'; playIcon.style.display='none'; }
   else       { pauseIcon.style.display='none';  playIcon.style.display='block'; }
 
@@ -317,7 +346,7 @@ function beep(){
   }catch(e){}
 }
 
-// Preset buttons
+// Presets
 document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
 document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
 document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
@@ -327,9 +356,9 @@ pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
 
 // Eye toggle
-document.getElementById('eyeBtn').addEventListener('click', ()=>{ showTime=!showTime; updateUI(); });
+eyeBtn.addEventListener('click', ()=>{ showTime=!showTime; updateUI(); });
 
-// External app buttons (with haptic)
+// External app buttons
 document.getElementById('whoopBtn').addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='whoop://';
@@ -339,7 +368,7 @@ document.getElementById('notesBtn').addEventListener('click',()=>{
   window.location='mobilenotes://';
 });
 
-// Initialize ring to neutral
+// Initialize
 setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
 updateUI();
 </script>
