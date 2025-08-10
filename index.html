@@ -59,23 +59,7 @@ html, body {
   z-index: 2;
   transition: opacity .35s ease;
 }
-.time.hidden { display:none; }
-
-/* Dust effect overlay */
-.dustLayer {
-  position:absolute; inset:0; display:grid; place-items:center; z-index: 3; pointer-events:none;
-  font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
-}
-.dustChar {
-  display:inline-block;
-  will-change: transform, opacity, filter;
-  animation: blow 800ms ease-out forwards;
-}
-@keyframes blow {
-  0%   { transform: translate(0,0) rotate(0deg); opacity:1; filter: blur(0px); }
-  60%  { filter: blur(1.5px); }
-  100% { transform: translate(var(--dx,-18px), var(--dy,-18px)) rotate(var(--rot,10deg)); opacity:0; filter: blur(3px); }
-}
+.time.hidden { opacity: 0; }
 
 /* Breathing animation */
 .breath {
@@ -90,7 +74,16 @@ html, body {
   box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.12);
 }
 
-/* Whisper text now fixed at bottom center */
+/* Keyframes for box breathing */
+@keyframes breatheBox {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.6); } /* Inhale */
+  50%  { transform: scale(1.6); } /* Hold */
+  75%  { transform: scale(1); }   /* Exhale */
+  100% { transform: scale(1); }   /* Hold */
+}
+
+/* Whisper text */
 .whisper {
   position:absolute; bottom: 18px; left:0; right:0;
   display:flex; justify-content:center;
@@ -99,7 +92,7 @@ html, body {
   color: rgba(255,255,255,0.85);
   pointer-events:none;
 }
-.whisper span { position:absolute; opacity:0; }
+.whisper span { position:absolute; opacity:0; transition: opacity 0.3s ease; }
 
 /* Eye toggle row */
 .eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
@@ -175,7 +168,7 @@ html, body {
 <body>
 <div class="page">
   <div class="card" id="card">
-    <div class="ringWrap" id="ringWrap">
+    <div class="ringWrap">
       <svg width="240" height="240">
         <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
         <circle id="ringProg" cx="120" cy="120" r="110" stroke="var(--ring-neutral)" stroke-width="10" fill="none"
@@ -240,7 +233,7 @@ const phases=["In","Hold","Out","Hold"];
 
 const timeEl=document.getElementById('time');
 const ringProg=document.getElementById('ringProg');
-const breathEl=document.getElementById('breath');
+const breathDot=document.getElementById('breathDot');
 const phaseText=document.getElementById('phaseText');
 const pauseIcon=document.getElementById('pauseIcon');
 const playIcon=document.getElementById('playIcon');
@@ -252,26 +245,7 @@ function fmt(s){ return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart
 
 function updateUI(){
   timeEl.classList.toggle('hidden',!showTime);
-  breathEl.classList.toggle('focus',!showTime);
-}
-
-function blowAwayText(str){
-  const layer=document.createElement('div');
-  layer.className='dustLayer';
-  for(const ch of str){
-    const span=document.createElement('span');
-    span.className='dustChar';
-    span.textContent=ch;
-    const dx= - (Math.random()*60 + 14); // blow left
-    const dy= - (Math.random()*40 + 8);
-    const rot=(Math.random()*40 - 20);
-    span.style.setProperty('--dx',dx+'px');
-    span.style.setProperty('--dy',dy+'px');
-    span.style.setProperty('--rot',rot+'deg');
-    layer.appendChild(span);
-  }
-  document.getElementById('ringWrap').appendChild(layer);
-  setTimeout(()=>layer.remove(),900);
+  document.getElementById('breath').classList.toggle('focus',!showTime);
 }
 
 function rafTick(){
@@ -292,19 +266,19 @@ function startWith(s){
   duration=s; remaining=s; completed=false; running=true;
   endTime=Date.now()+s*1000;
   setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim());
-  document.getElementById('controls').classList.add('show');
+  controlsEl.classList.add('show');
   updateUI();
   if(!breathingStarted){ startBreathing(); breathingStarted=true; }
   rafId=requestAnimationFrame(rafTick);
 }
 
 function startBreathing(){
-  phaseText.textContent=phases[0]; phaseIndex=0;
+  breathDot.style.animation='breatheBox 16s ease-in-out infinite';
+  phaseText.textContent=phases[0]; phaseText.style.opacity=1;
   phaseTimer=setInterval(()=>{
     phaseIndex=(phaseIndex+1)%phases.length;
     phaseText.textContent=phases[phaseIndex];
   },4000);
-  document.getElementById('breathDot').style.animation='breatheBox 16s ease-in-out infinite';
 }
 
 function pauseResume(){
@@ -321,20 +295,18 @@ function reset(){
   cancelAnimationFrame(rafId);
   running=false; completed=false; duration=0; remaining=0;
   setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim());
-  document.getElementById('controls').classList.remove('show');
+  controlsEl.classList.remove('show');
   timeEl.textContent='0:00';
 }
 
 document.getElementById('eyeBtn').addEventListener('click',()=>{
   if(showTime){
-    const cur=timeEl.textContent;
-    timeEl.style.opacity=0;
-    blowAwayText(cur);
-    setTimeout(()=>{ showTime=false; timeEl.classList.add('hidden'); timeEl.style.opacity=''; updateUI(); },120);
+    timeEl.classList.add('hidden');
+    showTime=false; updateUI();
   } else {
-    showTime=true; timeEl.classList.remove('hidden'); timeEl.style.opacity=0; updateUI();
-    requestAnimationFrame(()=> requestAnimationFrame(()=> timeEl.style.opacity=1));
-    setTimeout(()=> timeEl.style.opacity='',400);
+    showTime=true;
+    timeEl.classList.remove('hidden');
+    updateUI();
   }
 });
 
