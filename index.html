@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Set Rest Timer</title>
 
-<!-- iOS web app feel -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Rest Timer" />
@@ -66,7 +65,6 @@ html, body {
   text-align: center;
   font-weight: 650;
   backdrop-filter: blur(12px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
   transition: transform .04s ease, background .15s ease, border-color .15s ease;
   cursor: pointer;
 }
@@ -95,7 +93,8 @@ html, body {
 }
 .controls .circle-btn {
   opacity: 0.8;
-  background: rgba(255,255,255,0.08);
+  font-size: 22px;
+  line-height: 0;
 }
 
 .bottomButtons {
@@ -113,7 +112,6 @@ html, body {
   backdrop-filter: blur(12px);
   cursor: pointer;
   transition: background .15s ease, transform .04s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 .circle-btn:hover { background: rgba(255,255,255,0.2); }
 .circle-btn:active { transform: scale(0.96); }
@@ -137,12 +135,10 @@ html, body {
 .flash {
   position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none;
 }
-.flash.loop { animation: flash 4s ease-in-out infinite; }
+.flash.loop { animation: flash 6s ease-in-out infinite; }
 @keyframes flash {
   0%{opacity:0}
-  25%{opacity:.85}
-  50%{opacity:0}
-  75%{opacity:.85}
+  50%{opacity:.85}
   100%{opacity:0}
 }
 
@@ -173,8 +169,8 @@ html, body {
     </div>
 
     <div class="controls" id="controls">
-      <button class="circle-btn btn-emerald" id="pauseResume">▐▐</button>
-      <button class="circle-btn" id="reset">⟲</button>
+      <button class="circle-btn btn-emerald" id="pauseResume" style="font-size: 26px;">▐▐</button>
+      <button class="circle-btn" id="reset" style="font-size: 20px;">⟲</button>
     </div>
 
     <div class="bottomButtons">
@@ -277,7 +273,6 @@ function beep(){
   }catch(e){}
 }
 
-// Event listeners
 document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
 document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
 document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
@@ -285,7 +280,6 @@ pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
 ['click','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,clearFlash,{passive:true}));
 
-// Bottom app buttons + haptic
 document.getElementById('whoopBtn').addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='whoop://';
