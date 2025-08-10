@@ -85,14 +85,17 @@ html, body {
 
 /* Whisper text */
 .whisper {
-  position:absolute; bottom: 18px; left:0; right:0;
-  display:flex; justify-content:center;
+  position:absolute;
+  bottom: 28px; /* Now just above the ring stroke */
+  left:0; right:0;
+  text-align:center;
   font-size: 13px; letter-spacing:.08em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.85);
   pointer-events:none;
+  z-index: 3;
 }
-.whisper span { position:absolute; opacity:0; transition: opacity 0.3s ease; }
+.whisper span { position:relative; opacity:1; }
 
 /* Eye toggle row */
 .eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
@@ -177,9 +180,10 @@ html, body {
 
       <div class="breath" id="breath">
         <div class="breath-dot" id="breathDot"></div>
-        <div class="whisper" id="whisper">
-          <span id="phaseText"></span>
-        </div>
+      </div>
+
+      <div class="whisper" id="whisper">
+        <span id="phaseText"></span>
       </div>
 
       <div class="time" id="time">0:00</div>
