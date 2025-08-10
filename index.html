@@ -35,7 +35,6 @@ html, body {
   display: grid;
   place-items: center;
   padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
-  position: relative;
 }
 .card {
   width: 100%;
@@ -80,24 +79,23 @@ html, body {
 .controls {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 18px;
   align-items: center;
   margin-top: 12px;
+  max-height: 0;
   opacity: 0;
+  overflow: hidden;
   transform: translateY(-8px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: max-height 0.4s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 .controls.show {
+  max-height: 80px;
   opacity: 1;
   transform: translateY(0);
 }
-.controls .btn {
+.controls .circle-btn {
   opacity: 0.8;
   background: rgba(255,255,255,0.08);
-}
-.controls .btn.btn-emerald {
-  background: rgba(52,211,153,.15);
-  border-color: rgba(52,211,153,.3);
 }
 
 .bottomButtons {
@@ -126,25 +124,20 @@ html, body {
   border: 2px solid rgba(255,255,255,0.8);
   position: relative;
 }
-.notes-icon::before {
-  content: '';
-  position: absolute; top: 6px; left: 4px; right: 4px; height: 2px;
-  background: rgba(255,255,255,0.8);
-  border-radius: 1px;
-}
+.notes-icon::before,
 .notes-icon::after {
   content: '';
-  position: absolute; top: 12px; left: 4px; right: 4px; height: 2px;
+  position: absolute; left: 4px; right: 4px; height: 2px;
   background: rgba(255,255,255,0.8);
   border-radius: 1px;
 }
+.notes-icon::before { top: 6px; }
+.notes-icon::after { top: 12px; }
 
 .flash {
   position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none;
 }
-.flash.loop {
-  animation: flash 4s ease-in-out infinite;
-}
+.flash.loop { animation: flash 4s ease-in-out infinite; }
 @keyframes flash {
   0%{opacity:0}
   25%{opacity:.85}
@@ -180,11 +173,8 @@ html, body {
     </div>
 
     <div class="controls" id="controls">
-      <button class="btn btn-emerald" id="pauseResume">
-        <span id="pauseResumeIcon">▐▐</span>
-        <span id="pauseResumeText" style="margin-left:8px;">Pause</span>
-      </button>
-      <button class="btn" id="reset">⟲<span style="margin-left:8px;">Reset</span></button>
+      <button class="circle-btn btn-emerald" id="pauseResume">▐▐</button>
+      <button class="circle-btn" id="reset">⟲</button>
     </div>
 
     <div class="bottomButtons">
@@ -204,15 +194,9 @@ const timeEl=document.getElementById('time');
 const ringProg=document.getElementById('ringProg');
 const controlsEl=document.getElementById('controls');
 const pauseResumeBtn=document.getElementById('pauseResume');
-const pauseResumeIcon=document.getElementById('pauseResumeIcon');
-const pauseResumeText=document.getElementById('pauseResumeText');
 const resetBtn=document.getElementById('reset');
 const flashEl=document.getElementById('flash');
 const liveEl=document.getElementById('live');
-const btn60=document.getElementById('btn-60');
-const btn90=document.getElementById('btn-90');
-const btn120=document.getElementById('btn-120');
-const cardEl=document.getElementById('card');
 
 const RADIUS=110;
 const CIRC=2*Math.PI*RADIUS;
@@ -223,9 +207,6 @@ function updateUI(){
   timeEl.textContent=fmt(remaining);
   const progress=duration>0?(duration-remaining)/duration:0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
-  pauseResumeBtn.disabled=completed;
-  if(running){pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause';}
-  else{pauseResumeIcon.textContent='▶'; pauseResumeText.textContent='Resume';}
 }
 
 function cancelRAF(){if(rafId){cancelAnimationFrame(rafId); rafId=null;}}
@@ -256,23 +237,14 @@ function rafTick(){
 }
 
 async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLock=await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release',()=>{});
-    }
-  }catch(e){}
+  try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }
+  catch(e){}
 }
-function releaseWakeLock(){try{if(wakeLock){wakeLock.release(); wakeLock=null;}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&running)requestWakeLock();});
+function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&running) requestWakeLock(); });
 
-function showControls(){
-  controlsEl.classList.add('show');
-  cardEl.style.paddingBottom='24px';
-}
-function hideControls(){
-  controlsEl.classList.remove('show');
-}
+function showControls(){ controlsEl.classList.add('show'); }
+function hideControls(){ controlsEl.classList.remove('show'); }
 
 function startWith(s){
   cancelRAF(); clearFlash(); hideControls();
@@ -285,7 +257,6 @@ function pauseResume(){
   if(completed) return; clearFlash();
   if(running){running=false; cancelRAF(); releaseWakeLock();}
   else{running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock();}
-  updateUI();
 }
 function reset(){
   cancelRAF(); clearFlash(); hideControls();
@@ -306,10 +277,10 @@ function beep(){
   }catch(e){}
 }
 
-// Buttons
-btn60.addEventListener('click',()=>startWith(60));
-btn90.addEventListener('click',()=>startWith(90));
-btn120.addEventListener('click',()=>startWith(120));
+// Event listeners
+document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
+document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
+document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
 pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
 ['click','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,clearFlash,{passive:true}));
