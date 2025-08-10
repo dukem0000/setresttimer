@@ -17,7 +17,9 @@
   --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
   --card: rgba(255,255,255,0.10);
   --text: rgba(255,255,255,0.92);
-  --ring: rgba(52,211,153,.85);
+  --ring-neutral: rgba(255,255,255,0.45);  /* idle */
+  --ring-active: #f59e0b;                  /* orange while running */
+  --ring-done:   #34d399;                  /* green when finished */
 }
 
 * { box-sizing: border-box }
@@ -58,10 +60,7 @@ html, body {
 .time.hidden { display:none; }
 
 /* Eye toggle under ring */
-.eye-row {
-  display:flex; justify-content:center; align-items:center;
-  margin-bottom: 8px;
-}
+.eye-row { display:flex; justify-content:center; align-items:center; margin-bottom: 8px; }
 .eye-btn {
   width: 36px; height: 36px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
@@ -70,11 +69,11 @@ html, body {
   backdrop-filter: blur(10px);
   cursor:pointer;
   transition: background .15s ease, transform .04s ease, opacity .15s ease;
-  opacity: .6; /* slightly transparent by default */
+  opacity: .6;
 }
 .eye-btn:hover { background: rgba(255,255,255,0.14); }
 .eye-btn:active { transform: scale(0.96); }
-.eye-btn.active { opacity: 1; }  /* solid white icon when active (timer hidden) */
+.eye-btn.active { opacity: 1; }
 .eye-icon { width: 20px; height: 20px; display:block; }
 
 /* Preset buttons */
@@ -110,12 +109,9 @@ html, body {
   transform: translateY(-8px);
   transition: max-height 0.4s ease, opacity 0.3s ease, transform 0.3s ease;
 }
-.controls.show {
-  max-height: 80px;
-  opacity: 1;
-  transform: translateY(0);
-}
-/* Circular control buttons using SVG to avoid baseline issues */
+.controls.show { max-height: 80px; opacity: 1; transform: translateY(0); }
+
+/* Circular buttons */
 .circle-btn {
   width: 54px; height: 54px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
@@ -124,23 +120,21 @@ html, body {
   backdrop-filter: blur(12px);
   cursor: pointer;
   transition: background .15s ease, transform .04s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.0); /* remove ugly horizontal shadow */
 }
 .circle-btn:hover { background: rgba(255,255,255,0.2); }
 .circle-btn:active { transform: scale(0.96); }
+
+/* Icons in circular buttons use SVG so they stay perfectly centered */
+.icon { width: 26px; height: 26px; display:block; }
+.icon-reset { width: 26px; height: 26px; }
+
+/* Controls styling (slightly more subtle) */
 .controls .circle-btn { opacity: 0.8; }
 .controls .circle-btn.btn-emerald { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3); }
 
-.icon { width: 26px; height: 26px; display:block; }
-.icon-reset { width: 24px; height: 24px; } /* slightly larger than before */
-
 /* Bottom Whoop / Notes */
-.bottomButtons {
-  margin-top: 18px;
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-}
+.bottomButtons { margin-top: 18px; display: flex; justify-content: center; gap: 18px; }
+.whoop-btn { font-size: 26px; font-weight: 800; color: var(--text); } /* Bigger W again */
 .notes-icon {
   width: 28px; height: 28px;
   border-radius: 4px;
@@ -157,33 +151,19 @@ html, body {
 .notes-icon::before { top: 6px; }
 .notes-icon::after { top: 12px; }
 
-/* Flash overlay (3s in, 3s out) */
-.flash {
-  position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none;
-}
-.flash.loop { animation: flash 6s ease-in-out infinite; }
-@keyframes flash {
-  0%{opacity:0}
-  50%{opacity:.85}
-  100%{opacity:0}
-}
-
 .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="flash" id="flash"></div>
-
   <div class="card" id="card">
     <div class="title">Set Rest Timer</div>
 
     <div class="ringWrap">
       <svg width="240" height="240" aria-hidden="true">
         <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
-        <circle id="ringProg" cx="120" cy="120" r="110" stroke="currentColor" stroke-width="10" fill="none"
-                stroke-linecap="round" transform="rotate(-90 120 120)"
-                style="color: var(--ring); stroke-dasharray: 0 691"/>
+        <circle id="ringProg" cx="120" cy="120" r="110" stroke="var(--ring-neutral)" stroke-width="10" fill="none"
+                stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
       </svg>
       <div class="time" id="time">0:00</div>
     </div>
@@ -191,7 +171,6 @@ html, body {
     <!-- Eye toggle -->
     <div class="eye-row">
       <button id="eyeBtn" class="eye-btn" aria-label="Show or hide timer">
-        <!-- Eye outline SVG -->
         <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
           <circle cx="12" cy="12" r="3"/>
@@ -206,7 +185,7 @@ html, body {
     </div>
 
     <div class="controls" id="controls">
-      <!-- PAUSE (icon-only, perfectly centered) -->
+      <!-- Pause / Play -->
       <button class="circle-btn btn-emerald" id="pauseResume" aria-label="Pause or resume">
         <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="6.5" y="5" width="3.5" height="14" rx="1.2"></rect>
@@ -217,7 +196,7 @@ html, body {
         </svg>
       </button>
 
-      <!-- RESET (icon-only, larger/centered) -->
+      <!-- Reset -->
       <button class="circle-btn" id="reset" aria-label="Reset">
         <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 12a9 9 0 1 0 3-6.7"></path>
@@ -227,7 +206,7 @@ html, body {
     </div>
 
     <div class="bottomButtons">
-      <button class="circle-btn" id="whoopBtn" aria-label="Open Whoop">W</button>
+      <button class="circle-btn whoop-btn" id="whoopBtn" aria-label="Open Whoop">W</button>
       <button class="circle-btn" id="notesBtn" aria-label="Open Notes"><div class="notes-icon"></div></button>
     </div>
 
@@ -248,7 +227,6 @@ const pauseIcon=document.getElementById('pauseIcon');
 const playIcon=document.getElementById('playIcon');
 const resetBtn=document.getElementById('reset');
 const eyeBtn=document.getElementById('eyeBtn');
-const flashEl=document.getElementById('flash');
 const liveEl=document.getElementById('live');
 
 const RADIUS=110;
@@ -256,16 +234,16 @@ const CIRC=2*Math.PI*RADIUS;
 const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const clamp01=x=>Math.max(0,Math.min(1,x));
 
+function setRingColor(color){ ringProg.setAttribute('stroke', color); }
+
 function updateUI(){
-  // time text visibility
+  // time visibility + eye state
   timeEl.classList.toggle('hidden', !showTime);
   eyeBtn.classList.toggle('active', !showTime);
 
-  // ring progress
+  // progress & icons
   const progress=duration>0?(duration-remaining)/duration:0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
-
-  // pause/play icon swap
   if(running){ pauseIcon.style.display='block'; playIcon.style.display='none'; }
   else       { pauseIcon.style.display='none';  playIcon.style.display='block'; }
 
@@ -273,7 +251,12 @@ function updateUI(){
 }
 
 function cancelRAF(){if(rafId){cancelAnimationFrame(rafId); rafId=null;}}
-function clearFlash(){flashEl.classList.remove('loop');}
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){} }
+function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&running) requestWakeLock(); });
+
+function showControls(){ controlsEl.classList.add('show'); }
+function hideControls(){ controlsEl.classList.remove('show'); }
 
 function rafTick(){
   const now=Date.now();
@@ -292,43 +275,35 @@ function rafTick(){
     remaining=0; lastShownWhole=0;
     timeEl.textContent=fmt(0);
     liveEl.textContent='Time up';
-    clearFlash();
-    flashEl.classList.add('loop');
+    setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-done').trim() || '#34d399');
     beep(); releaseWakeLock(); updateUI();
     return;
   }
   rafId=requestAnimationFrame(rafTick);
 }
 
-async function requestWakeLock(){
-  try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }
-  catch(e){}
-}
-function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&running) requestWakeLock(); });
-
-function showControls(){ controlsEl.classList.add('show'); }
-function hideControls(){ controlsEl.classList.remove('show'); }
-
 function startWith(s){
-  cancelRAF(); clearFlash(); hideControls();
+  cancelRAF(); hideControls();
   duration=s; remaining=s; completed=false; running=true;
   endTime=Date.now()+s*1000; lastShownWhole=Math.ceil(s);
+  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim() || '#f59e0b');
   liveEl.textContent=''; updateUI(); showControls();
   rafId=requestAnimationFrame(rafTick); requestWakeLock();
 }
 function pauseResume(){
-  if(completed) return; clearFlash();
-  if(running){running=false; cancelRAF(); releaseWakeLock();}
-  else{running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock();}
+  if(completed) return;
+  if(running){ running=false; cancelRAF(); releaseWakeLock(); }
+  else { running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock(); }
   updateUI();
 }
 function reset(){
-  cancelRAF(); clearFlash(); hideControls();
+  cancelRAF(); hideControls();
   duration=0; remaining=0; running=false; completed=false;
   lastShownWhole=null; liveEl.textContent='';
+  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
   releaseWakeLock(); updateUI();
 }
+
 function beep(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -342,7 +317,7 @@ function beep(){
   }catch(e){}
 }
 
-// Presets
+// Preset buttons
 document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
 document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
 document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
@@ -352,24 +327,20 @@ pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
 
 // Eye toggle
-eyeBtn.addEventListener('click', ()=>{
-  showTime = !showTime;
-  updateUI();
-});
+document.getElementById('eyeBtn').addEventListener('click', ()=>{ showTime=!showTime; updateUI(); });
 
-// Any interaction clears flashing
-['click','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,clearFlash,{passive:true}));
-
-// Bottom app buttons + haptic
-document.getElementById('whoopBtn')?.addEventListener('click',()=>{
+// External app buttons (with haptic)
+document.getElementById('whoopBtn').addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='whoop://';
 });
-document.getElementById('notesBtn')?.addEventListener('click',()=>{
+document.getElementById('notesBtn').addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='mobilenotes://';
 });
 
+// Initialize ring to neutral
+setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
 updateUI();
 </script>
 </body>
