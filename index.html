@@ -16,10 +16,9 @@
   --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
   --card: rgba(255,255,255,0.10);
   --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.7);
-  --ring-neutral: rgba(255,255,255,0.45);  /* idle */
-  --ring-active: #f59e0b;                  /* orange while running */
-  --ring-done:   #34d399;                  /* green when finished */
+  --ring-neutral: rgba(255,255,255,0.45);
+  --ring-active: #f59e0b;
+  --ring-done:   #34d399;
 }
 
 * { box-sizing: border-box }
@@ -30,7 +29,6 @@ html, body {
   background: var(--bg1), var(--bg2), #0b1220;
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  overscroll-behavior: none;
 }
 .page {
   min-height: 100%;
@@ -50,87 +48,73 @@ html, body {
   transition: all 0.4s ease;
 }
 
-/* Ring + time */
+/* Ring wrap */
 .ringWrap { position: relative; width: 240px; height: 240px; margin: 8px auto 8px; }
+.ringWrap > svg { position: relative; z-index: 0; }
+
+/* Timer text */
 .time {
   position:absolute; inset:0; display:grid; place-items:center;
   font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 0 rgba(0,0,0,.2);
+  z-index: 2;
+  transition: opacity .35s ease;
 }
 .time.hidden { display:none; }
 
-/* Breathing animation (always visible under time) */
-.breath {
-  position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+/* Dust effect overlay */
+.dustLayer {
+  position:absolute; inset:0; display:grid; place-items:center; z-index: 3; pointer-events:none;
+  font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
 }
+.dustChar {
+  display:inline-block;
+  will-change: transform, opacity, filter;
+  animation: blow 800ms ease-out forwards;
+}
+@keyframes blow {
+  0%   { transform: translate(0,0) rotate(0deg); opacity:1; filter: blur(0px); }
+  60%  { filter: blur(1.5px); }
+  100% { transform: translate(var(--dx,-18px), var(--dy,-18px)) rotate(var(--rot,10deg)); opacity:0; filter: blur(3px); }
+}
+
+/* Breathing animation */
+.breath {
+  position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; z-index: 1;
+  opacity: .35; transform: scale(1); transition: opacity .25s ease, transform .25s ease;
+}
+.breath.focus { opacity: 1; transform: scale(1.05); }
 .breath-dot {
   width: 78px; height: 78px; border-radius: 50%;
   background: rgba(255,255,255,0.10);
   border: 2px solid rgba(255,255,255,0.85);
   box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.12);
-  animation: breatheBox 16s ease-in-out infinite; /* 4s in, 4s hold, 4s out, 4s hold */
-}
-@keyframes breatheBox {
-  0%   { transform: scale(0.65); opacity: .85; }  /* start small */
-  25%  { transform: scale(1.00); opacity: 1; }    /* end inhale */
-  50%  { transform: scale(1.00); opacity: 1; }    /* hold full */
-  75%  { transform: scale(0.65); opacity: .85; }  /* end exhale */
-  100% { transform: scale(0.65); opacity: .85; }  /* hold empty */
 }
 
-/* Whisper text that follows the cycle */
+/* Whisper text now fixed at bottom center */
 .whisper {
-  position:absolute; bottom: 22px; left:0; right:0;
-  display:flex; justify-content:center; gap:12px;
+  position:absolute; bottom: 18px; left:0; right:0;
+  display:flex; justify-content:center;
   font-size: 13px; letter-spacing:.08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(255,255,255,0.85);
   pointer-events:none;
 }
-.whisper span { opacity:0; }
-.whisper .in    { animation: whisperIn 16s ease-in-out infinite; }
-.whisper .hold1 { animation: whisperHold1 16s ease-in-out infinite; }
-.whisper .out   { animation: whisperOut 16s ease-in-out infinite; }
-.whisper .hold2 { animation: whisperHold2 16s ease-in-out infinite; }
+.whisper span { position:absolute; opacity:0; }
 
-@keyframes whisperIn {
-  0%, 2%   { opacity: 0.05; }
-  5%, 23%  { opacity: 0.9; }
-  25%,100% { opacity: 0.05; }
-}
-@keyframes whisperHold1 {
-  0%, 25%  { opacity: 0.05; }
-  28%, 48% { opacity: 0.9; }
-  50%,100% { opacity: 0.05; }
-}
-@keyframes whisperOut {
-  0%, 50%  { opacity: 0.05; }
-  53%, 73% { opacity: 0.9; }
-  75%,100% { opacity: 0.05; }
-}
-@keyframes whisperHold2 {
-  0%, 75%  { opacity: 0.05; }
-  78%, 98% { opacity: 0.9; }
-  100%     { opacity: 0.05; }
-}
-
-/* Toggle row (breath/clock button) */
-.toggle-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
-.toggle-btn {
+/* Eye toggle row */
+.eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
+.eye-btn {
   width: 36px; height: 36px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
   border: 1px solid rgba(255,255,255,.22);
   background: rgba(255,255,255,0.10);
   backdrop-filter: blur(10px);
   cursor:pointer;
-  transition: background .15s ease, transform .04s ease, opacity .15s ease;
   opacity: .85;
 }
-.toggle-btn:hover { background: rgba(255,255,255,0.14); }
-.toggle-btn:active { transform: scale(0.96); }
-.icon-20 { width: 20px; height: 20px; display:block; }
+.eye-icon { width: 20px; height: 20px; }
 
-/* Preset buttons */
+/* Presets */
 .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
 .btn {
   border-radius: 14px;
@@ -141,16 +125,9 @@ html, body {
   text-align: center;
   font-weight: 650;
   backdrop-filter: blur(12px);
-  transition: transform .04s ease, background .15s ease, border-color .15s ease;
-  cursor: pointer;
 }
-.btn:hover   { background: rgba(255,255,255,.14); }
-.btn:active  { transform: scale(.99); }
-.btn[disabled]{ opacity:.6; cursor:not-allowed }
-.btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
-.btn-emerald:hover { background: rgba(52,211,153,.26); }
 
-/* Controls slide-in */
+/* Controls */
 .controls {
   display: flex;
   justify-content: center;
@@ -165,28 +142,17 @@ html, body {
 }
 .controls.show { max-height: 80px; opacity: 1; transform: translateY(0); }
 
-/* Circular buttons */
 .circle-btn {
   width: 54px; height: 54px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.22);
   backdrop-filter: blur(12px);
-  cursor: pointer;
-  transition: background .15s ease, transform .04s ease;
 }
-.circle-btn:hover { background: rgba(255,255,255,0.2); }
-.circle-btn:active { transform: scale(0.96); }
-
-/* Icons in circular buttons via SVG */
-.icon { width: 26px; height: 26px; display:block; }
+.icon { width: 26px; height: 26px; }
 .icon-reset { width: 26px; height: 26px; }
 
-/* Controls stylings */
-.controls .circle-btn { opacity: 0.8; }
-.controls .circle-btn.btn-emerald { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3); }
-
-/* Bottom Whoop / Notes */
+/* Bottom buttons */
 .bottomButtons { margin-top: 18px; display: flex; justify-content: center; gap: 18px; }
 .whoop-btn { font-size: 26px; font-weight: 800; color: var(--text); }
 .notes-icon {
@@ -204,220 +170,183 @@ html, body {
 }
 .notes-icon::before { top: 6px; }
 .notes-icon::after { top: 12px; }
-
-.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="card" id="card">
-    <!-- Ring -->
-    <div class="ringWrap">
-      <svg width="240" height="240" aria-hidden="true">
+    <div class="ringWrap" id="ringWrap">
+      <svg width="240" height="240">
         <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
         <circle id="ringProg" cx="120" cy="120" r="110" stroke="var(--ring-neutral)" stroke-width="10" fill="none"
-                stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
+          stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
       </svg>
 
-      <!-- Timer text -->
-      <div class="time" id="time">0:00</div>
-
-      <!-- Breathing (always running) -->
-      <div class="breath">
-        <div class="breath-dot"></div>
-        <div class="whisper">
-          <span class="in">In</span>
-          <span class="hold1">Hold</span>
-          <span class="out">Out</span>
-          <span class="hold2">Hold</span>
+      <div class="breath" id="breath">
+        <div class="breath-dot" id="breathDot"></div>
+        <div class="whisper" id="whisper">
+          <span id="phaseText"></span>
         </div>
       </div>
+
+      <div class="time" id="time">0:00</div>
     </div>
 
-    <!-- Toggle: breathing icon <-> clock icon (hides/shows timer text only) -->
-    <div class="toggle-row">
-      <button id="toggleBtn" class="toggle-btn" aria-label="Toggle timer text">
-        <!-- Breathing icon (waves) -->
-        <svg id="breathIcon" class="icon-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12c2 0 2.5-3 5-3s3 3 5 3 2.5-3 5-3 3 3 3 3"></path>
-          <path d="M3 16c2 0 2.5-3 5-3s3 3 5 3 2.5-3 5-3 3 3 3 3"></path>
-        </svg>
-        <!-- Clock icon -->
-        <svg id="clockIcon" class="icon-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-          <circle cx="12" cy="12" r="9"></circle>
-          <path d="M12 7v5l3 3"></path>
+    <div class="eye-row">
+      <button id="eyeBtn" class="eye-btn">
+        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+          <circle cx="12" cy="12" r="3"/>
         </svg>
       </button>
     </div>
 
-    <!-- Presets -->
     <div class="grid3">
       <button class="btn" id="btn-60">1:00</button>
       <button class="btn" id="btn-90">1:30</button>
       <button class="btn" id="btn-120">2:00</button>
     </div>
 
-    <!-- Controls -->
     <div class="controls" id="controls">
-      <!-- Pause / Play -->
-      <button class="circle-btn btn-emerald" id="pauseResume" aria-label="Pause or resume">
-        <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <button class="circle-btn" id="pauseResume">
+        <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
           <rect x="6.5" y="5" width="3.5" height="14" rx="1.2"></rect>
           <rect x="14" y="5" width="3.5" height="14" rx="1.2"></rect>
         </svg>
-        <svg id="playIcon" class="icon" viewBox="0 0 24 24" fill="white" stroke="none" style="display:none" aria-hidden="true">
+        <svg id="playIcon" class="icon" viewBox="0 0 24 24" fill="white" style="display:none">
           <path d="M6 4l14 8-14 8z"></path>
         </svg>
       </button>
 
-      <!-- Reset -->
-      <button class="circle-btn" id="reset" aria-label="Reset">
-        <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <button class="circle-btn" id="reset">
+        <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
           <path d="M3 12a9 9 0 1 0 3-6.7"></path>
           <path d="M3 4v6h6"></path>
         </svg>
       </button>
     </div>
 
-    <!-- External app shortcuts -->
     <div class="bottomButtons">
-      <button class="circle-btn whoop-btn" id="whoopBtn" aria-label="Open Whoop">W</button>
-      <button class="circle-btn" id="notesBtn" aria-label="Open Notes"><div class="notes-icon"></div></button>
+      <button class="circle-btn whoop-btn" id="whoopBtn">W</button>
+      <button class="circle-btn" id="notesBtn"><div class="notes-icon"></div></button>
     </div>
-
-    <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
   </div>
 </div>
 
 <script>
-let duration=0, remaining=0, running=false, completed=false;
-let endTime=null, rafId=null, lastShownWhole=null;
-let showTime=true; // controls visibility of numeric timer text
+let duration=0, remaining=0, running=false, completed=false, endTime=null, rafId=null;
+let showTime=true, breathingStarted=false, phaseIndex=0, phaseTimer=null;
+const phases=["In","Hold","Out","Hold"];
 
 const timeEl=document.getElementById('time');
 const ringProg=document.getElementById('ringProg');
-const controlsEl=document.getElementById('controls');
-const pauseResumeBtn=document.getElementById('pauseResume');
+const breathEl=document.getElementById('breath');
+const phaseText=document.getElementById('phaseText');
 const pauseIcon=document.getElementById('pauseIcon');
 const playIcon=document.getElementById('playIcon');
-const resetBtn=document.getElementById('reset');
-const toggleBtn=document.getElementById('toggleBtn');
-const breathIcon=document.getElementById('breathIcon');
-const clockIcon=document.getElementById('clockIcon');
-const liveEl=document.getElementById('live');
-
+const controlsEl=document.getElementById('controls');
 const RADIUS=110, CIRC=2*Math.PI*RADIUS;
-const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-const clamp01=x=>Math.max(0,Math.min(1,x));
 
-function setRingColor(color){ ringProg.setAttribute('stroke', color); }
+function setRingColor(c){ ringProg.setAttribute('stroke',c); }
+function fmt(s){ return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
 
 function updateUI(){
-  // timer text visibility (breathing runs always)
-  timeEl.classList.toggle('hidden', !showTime);
-  // toggle icon: show clock when time hidden (to indicate it will show time on tap)
-  breathIcon.style.display = showTime ? 'block' : 'none';
-  clockIcon.style.display  = showTime ? 'none'  : 'block';
-
-  // progress + pause/play icon
-  const progress=duration>0?(duration-remaining)/duration:0;
-  ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
-
-  if(running){ pauseIcon.style.display='block'; playIcon.style.display='none'; }
-  else       { pauseIcon.style.display='none';  playIcon.style.display='block'; }
-
-  timeEl.textContent=fmt(remaining);
+  timeEl.classList.toggle('hidden',!showTime);
+  breathEl.classList.toggle('focus',!showTime);
 }
 
-function cancelRAF(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
-function showControls(){ controlsEl.classList.add('show'); }
-function hideControls(){ controlsEl.classList.remove('show'); }
+function blowAwayText(str){
+  const layer=document.createElement('div');
+  layer.className='dustLayer';
+  for(const ch of str){
+    const span=document.createElement('span');
+    span.className='dustChar';
+    span.textContent=ch;
+    const dx= - (Math.random()*60 + 14); // blow left
+    const dy= - (Math.random()*40 + 8);
+    const rot=(Math.random()*40 - 20);
+    span.style.setProperty('--dx',dx+'px');
+    span.style.setProperty('--dy',dy+'px');
+    span.style.setProperty('--rot',rot+'deg');
+    layer.appendChild(span);
+  }
+  document.getElementById('ringWrap').appendChild(layer);
+  setTimeout(()=>layer.remove(),900);
+}
 
 function rafTick(){
-  const now=Date.now();
-  const remainingMs=endTime-now;
-  const remainingSec=Math.max(0, remainingMs/1000);
-
-  // smooth ring
-  const progress=duration>0?clamp01((duration-remainingSec)/duration):0;
-  ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
-
-  // update shown seconds only when whole value changes
-  const whole=Math.ceil(remainingSec);
-  if(whole!==lastShownWhole){
-    lastShownWhole=whole; remaining=whole;
-    timeEl.textContent=fmt(remaining);
-  }
-
-  if(remainingMs<=0){
-    cancelRAF(); running=false; completed=true;
-    remaining=0; lastShownWhole=0;
-    timeEl.textContent=fmt(0);
-    liveEl.textContent='Time up';
-    setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-done').trim() || '#34d399');
+  const now=Date.now(), remMs=endTime-now, remSec=Math.max(0, remMs/1000);
+  ringProg.style.strokeDasharray=(CIRC*((duration-remSec)/duration))+' '+CIRC;
+  remaining=Math.ceil(remSec);
+  timeEl.textContent=fmt(remaining);
+  if(remMs<=0){
+    cancelAnimationFrame(rafId); running=false; completed=true;
+    remaining=0; timeEl.textContent=fmt(0);
+    setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-done').trim());
     return;
   }
-
   rafId=requestAnimationFrame(rafTick);
 }
 
 function startWith(s){
-  cancelRAF(); hideControls();
   duration=s; remaining=s; completed=false; running=true;
-  endTime=Date.now()+s*1000; lastShownWhole=Math.ceil(s);
-  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim() || '#f59e0b');
-  liveEl.textContent='';
+  endTime=Date.now()+s*1000;
+  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim());
+  document.getElementById('controls').classList.add('show');
   updateUI();
-  showControls();
+  if(!breathingStarted){ startBreathing(); breathingStarted=true; }
   rafId=requestAnimationFrame(rafTick);
+}
+
+function startBreathing(){
+  phaseText.textContent=phases[0]; phaseIndex=0;
+  phaseTimer=setInterval(()=>{
+    phaseIndex=(phaseIndex+1)%phases.length;
+    phaseText.textContent=phases[phaseIndex];
+  },4000);
+  document.getElementById('breathDot').style.animation='breatheBox 16s ease-in-out infinite';
 }
 
 function pauseResume(){
   if(completed) return;
   if(running){
-    running=false; cancelRAF();
+    running=false; cancelAnimationFrame(rafId);
   } else {
     running=true; endTime=Date.now()+(remaining*1000);
-    lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick);
+    rafId=requestAnimationFrame(rafTick);
   }
-  updateUI();
 }
 
 function reset(){
-  cancelRAF(); hideControls();
-  duration=0; remaining=0; running=false; completed=false;
-  lastShownWhole=null; liveEl.textContent='';
-  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
-  updateUI();
+  cancelAnimationFrame(rafId);
+  running=false; completed=false; duration=0; remaining=0;
+  setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim());
+  document.getElementById('controls').classList.remove('show');
+  timeEl.textContent='0:00';
 }
 
-// Toggle timer text (breathing continues regardless)
-toggleBtn.addEventListener('click', ()=>{
-  showTime = !showTime;
-  updateUI();
+document.getElementById('eyeBtn').addEventListener('click',()=>{
+  if(showTime){
+    const cur=timeEl.textContent;
+    timeEl.style.opacity=0;
+    blowAwayText(cur);
+    setTimeout(()=>{ showTime=false; timeEl.classList.add('hidden'); timeEl.style.opacity=''; updateUI(); },120);
+  } else {
+    showTime=true; timeEl.classList.remove('hidden'); timeEl.style.opacity=0; updateUI();
+    requestAnimationFrame(()=> requestAnimationFrame(()=> timeEl.style.opacity=1));
+    setTimeout(()=> timeEl.style.opacity='',400);
+  }
 });
 
-// Presets
-document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
-document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
-document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
+document.getElementById('btn-60').onclick=()=>startWith(60);
+document.getElementById('btn-90').onclick=()=>startWith(90);
+document.getElementById('btn-120').onclick=()=>startWith(120);
+document.getElementById('pauseResume').onclick=pauseResume;
+document.getElementById('reset').onclick=reset;
+document.getElementById('whoopBtn').onclick=()=>window.location='whoop://';
+document.getElementById('notesBtn').onclick=()=>window.location='mobilenotes://';
 
-// Controls
-pauseResumeBtn.addEventListener('click',pauseResume);
-resetBtn.addEventListener('click',reset);
-
-// External app buttons
-document.getElementById('whoopBtn').addEventListener('click',()=>{
-  if(navigator.vibrate) navigator.vibrate(30);
-  window.location='whoop://';
-});
-document.getElementById('notesBtn').addEventListener('click',()=>{
-  if(navigator.vibrate) navigator.vibrate(30);
-  window.location='mobilenotes://';
-});
-
-// Initialize
-setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
+setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim());
 updateUI();
 </script>
 </body>
