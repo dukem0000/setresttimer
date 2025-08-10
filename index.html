@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Set Rest Timer</title>
 
+<!-- iOS web app feel -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Rest Timer" />
@@ -48,13 +49,35 @@ html, body {
 }
 .title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
 
-.ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto; }
+.ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto 8px; }
 .time {
   position:absolute; inset:0; display:grid; place-items:center;
   font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 0 rgba(0,0,0,.2);
 }
+.time.hidden { display:none; }
 
+/* Eye toggle under ring */
+.eye-row {
+  display:flex; justify-content:center; align-items:center;
+  margin-bottom: 8px;
+}
+.eye-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  display:flex; align-items:center; justify-content:center;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(10px);
+  cursor:pointer;
+  transition: background .15s ease, transform .04s ease, opacity .15s ease;
+  opacity: .6; /* slightly transparent by default */
+}
+.eye-btn:hover { background: rgba(255,255,255,0.14); }
+.eye-btn:active { transform: scale(0.96); }
+.eye-btn.active { opacity: 1; }  /* solid white icon when active (timer hidden) */
+.eye-icon { width: 20px; height: 20px; display:block; }
+
+/* Preset buttons */
 .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
 .btn {
   border-radius: 14px;
@@ -74,6 +97,7 @@ html, body {
 .btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
 .btn-emerald:hover { background: rgba(52,211,153,.26); }
 
+/* Controls slide-in */
 .controls {
   display: flex;
   justify-content: center;
@@ -91,47 +115,49 @@ html, body {
   opacity: 1;
   transform: translateY(0);
 }
-.controls .circle-btn {
-  opacity: 0.8;
-  font-size: 22px;
-  line-height: 0;
+/* Circular control buttons using SVG to avoid baseline issues */
+.circle-btn {
+  width: 54px; height: 54px; border-radius: 50%;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background .15s ease, transform .04s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.0); /* remove ugly horizontal shadow */
 }
+.circle-btn:hover { background: rgba(255,255,255,0.2); }
+.circle-btn:active { transform: scale(0.96); }
+.controls .circle-btn { opacity: 0.8; }
+.controls .circle-btn.btn-emerald { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3); }
 
+.icon { width: 26px; height: 26px; display:block; }
+.icon-reset { width: 24px; height: 24px; } /* slightly larger than before */
+
+/* Bottom Whoop / Notes */
 .bottomButtons {
   margin-top: 18px;
   display: flex;
   justify-content: center;
   gap: 18px;
 }
-.circle-btn {
-  width: 54px; height: 54px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: bold; color: var(--text);
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.22);
-  backdrop-filter: blur(12px);
-  cursor: pointer;
-  transition: background .15s ease, transform .04s ease;
-}
-.circle-btn:hover { background: rgba(255,255,255,0.2); }
-.circle-btn:active { transform: scale(0.96); }
-
 .notes-icon {
   width: 28px; height: 28px;
   border-radius: 4px;
-  border: 2px solid rgba(255,255,255,0.8);
+  border: 2px solid rgba(255,255,255,0.9);
   position: relative;
 }
 .notes-icon::before,
 .notes-icon::after {
   content: '';
   position: absolute; left: 4px; right: 4px; height: 2px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.9);
   border-radius: 1px;
 }
 .notes-icon::before { top: 6px; }
 .notes-icon::after { top: 12px; }
 
+/* Flash overlay (3s in, 3s out) */
 .flash {
   position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none;
 }
@@ -162,6 +188,17 @@ html, body {
       <div class="time" id="time">0:00</div>
     </div>
 
+    <!-- Eye toggle -->
+    <div class="eye-row">
+      <button id="eyeBtn" class="eye-btn" aria-label="Show or hide timer">
+        <!-- Eye outline SVG -->
+        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+
     <div class="grid3">
       <button class="btn" id="btn-60">1:00</button>
       <button class="btn" id="btn-90">1:30</button>
@@ -169,13 +206,29 @@ html, body {
     </div>
 
     <div class="controls" id="controls">
-      <button class="circle-btn btn-emerald" id="pauseResume" style="font-size: 26px;">▐▐</button>
-      <button class="circle-btn" id="reset" style="font-size: 20px;">⟲</button>
+      <!-- PAUSE (icon-only, perfectly centered) -->
+      <button class="circle-btn btn-emerald" id="pauseResume" aria-label="Pause or resume">
+        <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="6.5" y="5" width="3.5" height="14" rx="1.2"></rect>
+          <rect x="14" y="5" width="3.5" height="14" rx="1.2"></rect>
+        </svg>
+        <svg id="playIcon" class="icon" viewBox="0 0 24 24" fill="white" stroke="none" style="display:none" aria-hidden="true">
+          <path d="M6 4l14 8-14 8z"></path>
+        </svg>
+      </button>
+
+      <!-- RESET (icon-only, larger/centered) -->
+      <button class="circle-btn" id="reset" aria-label="Reset">
+        <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+          <path d="M3 4v6h6"></path>
+        </svg>
+      </button>
     </div>
 
     <div class="bottomButtons">
-      <button class="circle-btn" id="whoopBtn">W</button>
-      <button class="circle-btn" id="notesBtn"><div class="notes-icon"></div></button>
+      <button class="circle-btn" id="whoopBtn" aria-label="Open Whoop">W</button>
+      <button class="circle-btn" id="notesBtn" aria-label="Open Notes"><div class="notes-icon"></div></button>
     </div>
 
     <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
@@ -185,12 +238,16 @@ html, body {
 <script>
 let duration=0, remaining=0, running=false, completed=false;
 let endTime=null, wakeLock=null, rafId=null, lastShownWhole=null;
+let showTime=true;
 
 const timeEl=document.getElementById('time');
 const ringProg=document.getElementById('ringProg');
 const controlsEl=document.getElementById('controls');
 const pauseResumeBtn=document.getElementById('pauseResume');
+const pauseIcon=document.getElementById('pauseIcon');
+const playIcon=document.getElementById('playIcon');
 const resetBtn=document.getElementById('reset');
+const eyeBtn=document.getElementById('eyeBtn');
 const flashEl=document.getElementById('flash');
 const liveEl=document.getElementById('live');
 
@@ -200,9 +257,19 @@ const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const clamp01=x=>Math.max(0,Math.min(1,x));
 
 function updateUI(){
-  timeEl.textContent=fmt(remaining);
+  // time text visibility
+  timeEl.classList.toggle('hidden', !showTime);
+  eyeBtn.classList.toggle('active', !showTime);
+
+  // ring progress
   const progress=duration>0?(duration-remaining)/duration:0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
+
+  // pause/play icon swap
+  if(running){ pauseIcon.style.display='block'; playIcon.style.display='none'; }
+  else       { pauseIcon.style.display='none';  playIcon.style.display='block'; }
+
+  timeEl.textContent=fmt(remaining);
 }
 
 function cancelRAF(){if(rafId){cancelAnimationFrame(rafId); rafId=null;}}
@@ -214,6 +281,7 @@ function rafTick(){
   const remainingSec=Math.max(0,remainingMs/1000);
   const progress=duration>0?clamp01((duration-remainingSec)/duration):0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
+
   const whole=Math.ceil(remainingSec);
   if(whole!==lastShownWhole){
     lastShownWhole=whole; remaining=whole;
@@ -253,6 +321,7 @@ function pauseResume(){
   if(completed) return; clearFlash();
   if(running){running=false; cancelRAF(); releaseWakeLock();}
   else{running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock();}
+  updateUI();
 }
 function reset(){
   cancelRAF(); clearFlash(); hideControls();
@@ -273,18 +342,30 @@ function beep(){
   }catch(e){}
 }
 
+// Presets
 document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
 document.getElementById('btn-90').addEventListener('click',()=>startWith(90));
 document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
+
+// Controls
 pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
+
+// Eye toggle
+eyeBtn.addEventListener('click', ()=>{
+  showTime = !showTime;
+  updateUI();
+});
+
+// Any interaction clears flashing
 ['click','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,clearFlash,{passive:true}));
 
-document.getElementById('whoopBtn').addEventListener('click',()=>{
+// Bottom app buttons + haptic
+document.getElementById('whoopBtn')?.addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='whoop://';
 });
-document.getElementById('notesBtn').addEventListener('click',()=>{
+document.getElementById('notesBtn')?.addEventListener('click',()=>{
   if(navigator.vibrate) navigator.vibrate(30);
   window.location='mobilenotes://';
 });
