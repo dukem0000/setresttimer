@@ -1,336 +1,330 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Set Rest Timer</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Set Rest Timer</title>
 
-  <!-- iOS web app feel -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Rest Timer" />
-  <meta name="theme-color" content="#0b1220" />
-  <!-- <link rel="apple-touch-icon" href="/icon-180.png"> -->
+<!-- iOS web app feel -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Rest Timer" />
+<meta name="theme-color" content="#0b1220" />
 
-  <style>
-    :root{
-      --bg1: radial-gradient(1200px 800px at 20% -10%, rgba(125,211,252,0.2), transparent);
-      --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
-      --card: rgba(255,255,255,0.10);
-      --text: rgba(255,255,255,0.92);
-      --ring: rgba(52,211,153,.85);
-    }
-    * { box-sizing: border-box }
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: ui-rounded, -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg1), var(--bg2), #0b1220;
-      -webkit-font-smoothing: antialiased;
-      user-select: none;
-      overscroll-behavior: none;
-    }
-    .page {
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
-      position: relative;
-    }
-    .card {
-      width: 100%;
-      max-width: 420px;
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 22px;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 10px 40px -12px rgba(0,0,0,.45);
-      padding: 22px 22px 18px;
-    }
-    .title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+<style>
+:root {
+  --bg1: radial-gradient(1200px 800px at 20% -10%, rgba(125,211,252,0.2), transparent);
+  --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
+  --card: rgba(255,255,255,0.10);
+  --text: rgba(255,255,255,0.92);
+  --ring: rgba(52,211,153,.85);
+}
 
-    .ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto; }
-    .time {
-      position:absolute; inset:0; display:grid; place-items:center;
-      font-size: 56px; font-weight: 800; letter-spacing: .5px; font-variant-numeric: tabular-nums;
-      text-shadow: 0 1px 0 rgba(0,0,0,.2);
-    }
+* { box-sizing: border-box }
+html, body {
+  height: 100%; margin: 0;
+  font-family: ui-rounded, -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg1), var(--bg2), #0b1220;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overscroll-behavior: none;
+}
+.page {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+  position: relative;
+}
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 22px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 40px -12px rgba(0,0,0,.45);
+  padding: 22px 22px 18px;
+  transition: all 0.4s ease;
+}
+.title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
 
-    .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
-    .btn {
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.22);
-      background: rgba(255,255,255,.10);
-      color: var(--text);
-      padding: 12px 14px;
-      text-align: center;
-      font-weight: 650;
-      backdrop-filter: blur(12px);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
-      transition: transform .04s ease, background .15s ease, border-color .15s ease;
-      cursor: pointer;
-    }
-    .btn:hover   { background: rgba(255,255,255,.14); }
-    .btn:active  { transform: scale(.99); }
-    .btn[disabled]{ opacity:.6; cursor:not-allowed }
-    .btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
-    .btn-emerald:hover { background: rgba(52,211,153,.26); }
+.ringWrap { position: relative; width: 240px; height: 240px; margin: 14px auto; }
+.time {
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-size: 56px; font-weight: 400; letter-spacing: .5px; font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 0 rgba(0,0,0,.2);
+}
 
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      align-items: center;
-      margin-top: 12px;
-    }
-    .controls.hidden { display:none; }
-    .controls .btn {
-      opacity: 0.8;
-      background: rgba(255,255,255,0.08);
-    }
-    .controls .btn.btn-emerald {
-      background: rgba(52,211,153,.15);
-      border-color: rgba(52,211,153,.3);
-    }
+.grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
+.btn {
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.10);
+  color: var(--text);
+  padding: 12px 14px;
+  text-align: center;
+  font-weight: 650;
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+  transition: transform .04s ease, background .15s ease, border-color .15s ease;
+  cursor: pointer;
+}
+.btn:hover   { background: rgba(255,255,255,.14); }
+.btn:active  { transform: scale(.99); }
+.btn[disabled]{ opacity:.6; cursor:not-allowed }
+.btn-emerald { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
+.btn-emerald:hover { background: rgba(52,211,153,.26); }
 
-    .bottomButtons {
-      margin-top: 18px;
-      display: flex;
-      justify-content: center;
-      gap: 18px;
-    }
-    .circle-btn {
-      width: 54px; height: 54px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; font-weight: bold; color: var(--text);
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.22);
-      backdrop-filter: blur(12px);
-      cursor: pointer;
-      transition: background .15s ease, transform .04s ease;
-    }
-    .circle-btn:hover { background: rgba(255,255,255,0.14); }
-    .circle-btn:active { transform: scale(0.96); }
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  align-items: center;
+  margin-top: 12px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.controls.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.controls .btn {
+  opacity: 0.8;
+  background: rgba(255,255,255,0.08);
+}
+.controls .btn.btn-emerald {
+  background: rgba(52,211,153,.15);
+  border-color: rgba(52,211,153,.3);
+}
 
-    .flash { position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none; }
-    .flash.show { animation: flash 1.4s ease forwards; }
-    .flash.loop { animation: flash 1.2s ease-in-out infinite; }
-    @keyframes flash{ 0%{opacity:0} 20%{opacity:.85} 50%{opacity:.2} 80%{opacity:.85} 100%{opacity:0} }
+.bottomButtons {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+.circle-btn {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: bold; color: var(--text);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background .15s ease, transform .04s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.circle-btn:hover { background: rgba(255,255,255,0.2); }
+.circle-btn:active { transform: scale(0.96); }
 
-    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
-  </style>
+.notes-icon {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  border: 2px solid rgba(255,255,255,0.8);
+  position: relative;
+}
+.notes-icon::before {
+  content: '';
+  position: absolute; top: 6px; left: 4px; right: 4px; height: 2px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 1px;
+}
+.notes-icon::after {
+  content: '';
+  position: absolute; top: 12px; left: 4px; right: 4px; height: 2px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 1px;
+}
+
+.flash {
+  position:fixed; inset:0; background: rgba(52,211,153,.72); pointer-events:none; opacity:0; animation:none;
+}
+.flash.loop {
+  animation: flash 4s ease-in-out infinite;
+}
+@keyframes flash {
+  0%{opacity:0}
+  25%{opacity:.85}
+  50%{opacity:0}
+  75%{opacity:.85}
+  100%{opacity:0}
+}
+
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
+</style>
 </head>
 <body>
-  <div class="page">
-    <div class="flash" id="flash"></div>
+<div class="page">
+  <div class="flash" id="flash"></div>
 
-    <div class="card">
-      <div class="title">Set Rest Timer</div>
+  <div class="card" id="card">
+    <div class="title">Set Rest Timer</div>
 
-      <div class="ringWrap">
-        <svg width="240" height="240" aria-hidden="true">
-          <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
-          <circle id="ringProg" cx="120" cy="120" r="110" stroke="currentColor" stroke-width="10" fill="none"
-                  stroke-linecap="round" transform="rotate(-90 120 120)"
-                  style="color: var(--ring); stroke-dasharray: 0 691"/>
-        </svg>
-        <div class="time" id="time">0:00</div>
-      </div>
-
-      <div class="grid3">
-        <button class="btn" id="btn-60"  aria-label="Start one minute">1:00</button>
-        <button class="btn" id="btn-90"  aria-label="Start one minute thirty">1:30</button>
-        <button class="btn" id="btn-120" aria-label="Start two minutes">2:00</button>
-      </div>
-
-      <div class="controls hidden" id="controls">
-        <button class="btn btn-emerald" id="pauseResume">
-          <span id="pauseResumeIcon">▐▐</span>
-          <span id="pauseResumeText" style="margin-left:8px;">Pause</span>
-        </button>
-        <button class="btn" id="reset">⟲<span style="margin-left:8px;">Reset</span></button>
-      </div>
-
-      <div class="bottomButtons">
-        <button class="circle-btn" onclick="window.location='whoop://'">W</button>
-        <button class="circle-btn" onclick="window.location='mobilenotes://'">📝</button>
-      </div>
-
-      <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
+    <div class="ringWrap">
+      <svg width="240" height="240" aria-hidden="true">
+        <circle cx="120" cy="120" r="110" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none"/>
+        <circle id="ringProg" cx="120" cy="120" r="110" stroke="currentColor" stroke-width="10" fill="none"
+                stroke-linecap="round" transform="rotate(-90 120 120)"
+                style="color: var(--ring); stroke-dasharray: 0 691"/>
+      </svg>
+      <div class="time" id="time">0:00</div>
     </div>
+
+    <div class="grid3">
+      <button class="btn" id="btn-60">1:00</button>
+      <button class="btn" id="btn-90">1:30</button>
+      <button class="btn" id="btn-120">2:00</button>
+    </div>
+
+    <div class="controls" id="controls">
+      <button class="btn btn-emerald" id="pauseResume">
+        <span id="pauseResumeIcon">▐▐</span>
+        <span id="pauseResumeText" style="margin-left:8px;">Pause</span>
+      </button>
+      <button class="btn" id="reset">⟲<span style="margin-left:8px;">Reset</span></button>
+    </div>
+
+    <div class="bottomButtons">
+      <button class="circle-btn" id="whoopBtn">W</button>
+      <button class="circle-btn" id="notesBtn"><div class="notes-icon"></div></button>
+    </div>
+
+    <div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
   </div>
+</div>
 
-  <script>
-  // --- State ---
-  let duration = 0, remaining = 0, running = false, completed = false;
-  let endTime = null, wakeLock = null;
-  let rafId = null, lastShownWhole = null;
+<script>
+let duration=0, remaining=0, running=false, completed=false;
+let endTime=null, wakeLock=null, rafId=null, lastShownWhole=null;
 
-  // --- Elements ---
-  const timeEl = document.getElementById('time');
-  const ringProg = document.getElementById('ringProg');
-  const controlsEl = document.getElementById('controls');
-  const pauseResumeBtn = document.getElementById('pauseResume');
-  const pauseResumeIcon = document.getElementById('pauseResumeIcon');
-  const pauseResumeText = document.getElementById('pauseResumeText');
-  const resetBtn = document.getElementById('reset');
-  const flashEl = document.getElementById('flash');
-  const liveEl = document.getElementById('live');
+const timeEl=document.getElementById('time');
+const ringProg=document.getElementById('ringProg');
+const controlsEl=document.getElementById('controls');
+const pauseResumeBtn=document.getElementById('pauseResume');
+const pauseResumeIcon=document.getElementById('pauseResumeIcon');
+const pauseResumeText=document.getElementById('pauseResumeText');
+const resetBtn=document.getElementById('reset');
+const flashEl=document.getElementById('flash');
+const liveEl=document.getElementById('live');
+const btn60=document.getElementById('btn-60');
+const btn90=document.getElementById('btn-90');
+const btn120=document.getElementById('btn-120');
+const cardEl=document.getElementById('card');
 
-  const btn60 = document.getElementById('btn-60');
-  const btn90 = document.getElementById('btn-90');
-  const btn120 = document.getElementById('btn-120');
+const RADIUS=110;
+const CIRC=2*Math.PI*RADIUS;
+const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+const clamp01=x=>Math.max(0,Math.min(1,x));
 
-  // Ring math
-  const RADIUS = 110;
-  const CIRC = 2 * Math.PI * RADIUS; // ~691
+function updateUI(){
+  timeEl.textContent=fmt(remaining);
+  const progress=duration>0?(duration-remaining)/duration:0;
+  ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
+  pauseResumeBtn.disabled=completed;
+  if(running){pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause';}
+  else{pauseResumeIcon.textContent='▶'; pauseResumeText.textContent='Resume';}
+}
 
-  // Utils
-  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-  const clamp01 = x => Math.max(0, Math.min(1, x));
+function cancelRAF(){if(rafId){cancelAnimationFrame(rafId); rafId=null;}}
+function clearFlash(){flashEl.classList.remove('loop');}
 
-  function updateUI() {
-    timeEl.textContent = fmt(remaining);
-    const progress = duration > 0 ? (duration - remaining) / duration : 0;
-    ringProg.style.strokeDasharray = (CIRC * progress) + ' ' + CIRC;
-
-    controlsEl.classList.toggle('hidden', duration === 0);
-    pauseResumeBtn.disabled = completed;
-
-    if (running) { pauseResumeIcon.textContent='▐▐'; pauseResumeText.textContent='Pause'; }
-    else         { pauseResumeIcon.textContent='▶';  pauseResumeText.textContent='Resume'; }
+function rafTick(){
+  const now=Date.now();
+  const remainingMs=endTime-now;
+  const remainingSec=Math.max(0,remainingMs/1000);
+  const progress=duration>0?clamp01((duration-remainingSec)/duration):0;
+  ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
+  const whole=Math.ceil(remainingSec);
+  if(whole!==lastShownWhole){
+    lastShownWhole=whole; remaining=whole;
+    timeEl.textContent=fmt(remaining);
   }
-
-  function cancelRAF(){ if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
-  function clearFlash(){ flashEl.classList.remove('show'); flashEl.classList.remove('loop'); }
-
-  // Smooth per-frame loop
-  function rafTick() {
-    const now = Date.now();
-    const remainingMs = endTime - now;
-    const remainingSec = Math.max(0, remainingMs / 1000);
-
-    // Smooth ring progress (fractional)
-    const progress = duration > 0 ? clamp01((duration - remainingSec) / duration) : 0;
-    ringProg.style.strokeDasharray = (CIRC * progress) + ' ' + CIRC;
-
-    // Update displayed seconds only when whole second changes
-    const whole = Math.ceil(remainingSec);
-    if (whole !== lastShownWhole) {
-      lastShownWhole = whole;
-      remaining = whole;
-      timeEl.textContent = fmt(remaining);
-    }
-
-    if (remainingMs <= 0) {
-      cancelRAF();
-      running = false;
-      completed = true;
-      remaining = 0;
-      lastShownWhole = 0;
-      timeEl.textContent = fmt(0);
-      liveEl.textContent = 'Time up';
-      clearFlash();
-      flashEl.classList.add('loop'); // continuous flash until interaction
-      beep();
-      releaseWakeLock();
-      updateUI();
-      return;
-    }
-
-    rafId = requestAnimationFrame(rafTick);
-  }
-
-  async function requestWakeLock(){
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', ()=>{});
-      }
-    } catch (e) {}
-  }
-  function releaseWakeLock(){ try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e){} }
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && running) requestWakeLock();
-  });
-
-  function startWith(s) {
-    cancelRAF(); clearFlash();
-    duration = s; remaining = s; completed = false; running = true;
-    endTime = Date.now() + s * 1000;
-    lastShownWhole = Math.ceil(s);
-    liveEl.textContent = '';
-    controlsEl.classList.remove('hidden');
-    updateUI();
-    rafId = requestAnimationFrame(rafTick);
-    requestWakeLock();
-  }
-
-  function pauseResume() {
-    if (completed) return;
+  if(remainingMs<=0){
+    cancelRAF(); running=false; completed=true;
+    remaining=0; lastShownWhole=0;
+    timeEl.textContent=fmt(0);
+    liveEl.textContent='Time up';
     clearFlash();
-    if (running) {
-      running = false;
-      cancelRAF();
-      releaseWakeLock();
-    } else {
-      running = true;
-      endTime = Date.now() + (remaining * 1000);
-      lastShownWhole = remaining;
-      rafId = requestAnimationFrame(rafTick);
-      requestWakeLock();
+    flashEl.classList.add('loop');
+    beep(); releaseWakeLock(); updateUI();
+    return;
+  }
+  rafId=requestAnimationFrame(rafTick);
+}
+
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock=await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{});
     }
-    updateUI();
-  }
+  }catch(e){}
+}
+function releaseWakeLock(){try{if(wakeLock){wakeLock.release(); wakeLock=null;}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&running)requestWakeLock();});
 
-  function reset() {
-    cancelRAF(); clearFlash();
-    duration = 0; remaining = 0; running = false; completed = false;
-    lastShownWhole = null;
-    liveEl.textContent = '';
-    releaseWakeLock();
-    updateUI();
-  }
+function showControls(){
+  controlsEl.classList.add('show');
+  cardEl.style.paddingBottom='24px';
+}
+function hideControls(){
+  controlsEl.classList.remove('show');
+}
 
-  // Gentle beep using Web Audio (works in iOS after a user gesture)
-  function beep() {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = 880;
-      o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-      o.start(); o.stop(ctx.currentTime + 0.4);
-    } catch(e) {}
-  }
-
-  // Wire up
-  btn60.addEventListener('click', ()=> startWith(60));
-  btn90.addEventListener('click', ()=> startWith(90));
-  btn120.addEventListener('click', ()=> startWith(120));
-  pauseResumeBtn.addEventListener('click', pauseResume);
-  resetBtn.addEventListener('click', reset);
-
-  // Any interaction clears the flashing
-  ['click','touchstart','keydown'].forEach(ev =>
-    window.addEventListener(ev, clearFlash, { passive: true })
-  );
-
-  // Optional desktop shortcuts
-  window.addEventListener('keydown', (e)=>{
-    if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
-    if (e.code === 'Digit1') startWith(60);
-    if (e.code === 'Digit2') startWith(90);
-    if (e.code === 'Digit3') startWith(120);
-    if (e.code === 'Space') { e.preventDefault(); if (duration>0) pauseResume(); }
-    if (e.code === 'KeyR') reset();
-  });
-
+function startWith(s){
+  cancelRAF(); clearFlash(); hideControls();
+  duration=s; remaining=s; completed=false; running=true;
+  endTime=Date.now()+s*1000; lastShownWhole=Math.ceil(s);
+  liveEl.textContent=''; updateUI(); showControls();
+  rafId=requestAnimationFrame(rafTick); requestWakeLock();
+}
+function pauseResume(){
+  if(completed) return; clearFlash();
+  if(running){running=false; cancelRAF(); releaseWakeLock();}
+  else{running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock();}
   updateUI();
-  </script>
+}
+function reset(){
+  cancelRAF(); clearFlash(); hideControls();
+  duration=0; remaining=0; running=false; completed=false;
+  lastShownWhole=null; liveEl.textContent='';
+  releaseWakeLock(); updateUI();
+}
+function beep(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(); const g=ctx.createGain();
+    o.type='sine'; o.frequency.value=880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.0001,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2,ctx.currentTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.35);
+    o.start(); o.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
+
+// Buttons
+btn60.addEventListener('click',()=>startWith(60));
+btn90.addEventListener('click',()=>startWith(90));
+btn120.addEventListener('click',()=>startWith(120));
+pauseResumeBtn.addEventListener('click',pauseResume);
+resetBtn.addEventListener('click',reset);
+['click','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,clearFlash,{passive:true}));
+
+// Bottom app buttons + haptic
+document.getElementById('whoopBtn').addEventListener('click',()=>{
+  if(navigator.vibrate) navigator.vibrate(30);
+  window.location='whoop://';
+});
+document.getElementById('notesBtn').addEventListener('click',()=>{
+  if(navigator.vibrate) navigator.vibrate(30);
+  window.location='mobilenotes://';
+});
+
+updateUI();
+</script>
 </body>
 </html>
