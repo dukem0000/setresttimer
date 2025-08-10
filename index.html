@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Set Rest Timer</title>
 
-<!-- iOS web app feel -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Rest Timer" />
@@ -17,6 +16,7 @@
   --bg2: radial-gradient(1000px 600px at 120% 110%, rgba(52,211,153,0.15), transparent);
   --card: rgba(255,255,255,0.10);
   --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.7);
   --ring-neutral: rgba(255,255,255,0.45);  /* idle */
   --ring-active: #f59e0b;                  /* orange while running */
   --ring-done:   #34d399;                  /* green when finished */
@@ -59,28 +59,64 @@ html, body {
 }
 .time.hidden { display:none; }
 
-/* Breathing animation (shows when time is hidden) */
+/* Breathing animation (always visible under time) */
 .breath {
-  position:absolute; inset:0; display:grid; place-items:center;
-  pointer-events:none; opacity:0; transition: opacity .25s ease;
+  position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
 }
-.breath.show { opacity:1; }
 .breath-dot {
   width: 78px; height: 78px; border-radius: 50%;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.10);
   border: 2px solid rgba(255,255,255,0.85);
-  box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.15);
-  animation: breathe 8s ease-in-out infinite; /* 4s in, 4s out */
+  box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.12);
+  animation: breatheBox 16s ease-in-out infinite; /* 4s in, 4s hold, 4s out, 4s hold */
 }
-@keyframes breathe {
-  0%   { transform: scale(0.65); opacity: .85; }
-  50%  { transform: scale(1.00); opacity: 1;    }
-  100% { transform: scale(0.65); opacity: .85; }
+@keyframes breatheBox {
+  0%   { transform: scale(0.65); opacity: .85; }  /* start small */
+  25%  { transform: scale(1.00); opacity: 1; }    /* end inhale */
+  50%  { transform: scale(1.00); opacity: 1; }    /* hold full */
+  75%  { transform: scale(0.65); opacity: .85; }  /* end exhale */
+  100% { transform: scale(0.65); opacity: .85; }  /* hold empty */
 }
 
-/* Eye toggle under ring */
-.eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
-.eye-btn {
+/* Whisper text that follows the cycle */
+.whisper {
+  position:absolute; bottom: 22px; left:0; right:0;
+  display:flex; justify-content:center; gap:12px;
+  font-size: 13px; letter-spacing:.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  pointer-events:none;
+}
+.whisper span { opacity:0; }
+.whisper .in    { animation: whisperIn 16s ease-in-out infinite; }
+.whisper .hold1 { animation: whisperHold1 16s ease-in-out infinite; }
+.whisper .out   { animation: whisperOut 16s ease-in-out infinite; }
+.whisper .hold2 { animation: whisperHold2 16s ease-in-out infinite; }
+
+@keyframes whisperIn {
+  0%, 2%   { opacity: 0.05; }
+  5%, 23%  { opacity: 0.9; }
+  25%,100% { opacity: 0.05; }
+}
+@keyframes whisperHold1 {
+  0%, 25%  { opacity: 0.05; }
+  28%, 48% { opacity: 0.9; }
+  50%,100% { opacity: 0.05; }
+}
+@keyframes whisperOut {
+  0%, 50%  { opacity: 0.05; }
+  53%, 73% { opacity: 0.9; }
+  75%,100% { opacity: 0.05; }
+}
+@keyframes whisperHold2 {
+  0%, 75%  { opacity: 0.05; }
+  78%, 98% { opacity: 0.9; }
+  100%     { opacity: 0.05; }
+}
+
+/* Toggle row (breath/clock button) */
+.toggle-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
+.toggle-btn {
   width: 36px; height: 36px; border-radius: 50%;
   display:flex; align-items:center; justify-content:center;
   border: 1px solid rgba(255,255,255,.22);
@@ -88,12 +124,11 @@ html, body {
   backdrop-filter: blur(10px);
   cursor:pointer;
   transition: background .15s ease, transform .04s ease, opacity .15s ease;
-  opacity: .6;
+  opacity: .85;
 }
-.eye-btn:hover { background: rgba(255,255,255,0.14); }
-.eye-btn:active { transform: scale(0.96); }
-.eye-btn.active { opacity: 1; }
-.eye-icon { width: 20px; height: 20px; display:block; }
+.toggle-btn:hover { background: rgba(255,255,255,0.14); }
+.toggle-btn:active { transform: scale(0.96); }
+.icon-20 { width: 20px; height: 20px; display:block; }
 
 /* Preset buttons */
 .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
@@ -143,7 +178,7 @@ html, body {
 .circle-btn:hover { background: rgba(255,255,255,0.2); }
 .circle-btn:active { transform: scale(0.96); }
 
-/* Icons in circular buttons via SVG to stay perfectly centered */
+/* Icons in circular buttons via SVG */
 .icon { width: 26px; height: 26px; display:block; }
 .icon-reset { width: 26px; height: 26px; }
 
@@ -184,20 +219,33 @@ html, body {
                 stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
       </svg>
 
+      <!-- Timer text -->
       <div class="time" id="time">0:00</div>
 
-      <!-- Breathing animation (visible when time hidden) -->
-      <div class="breath" id="breath">
+      <!-- Breathing (always running) -->
+      <div class="breath">
         <div class="breath-dot"></div>
+        <div class="whisper">
+          <span class="in">In</span>
+          <span class="hold1">Hold</span>
+          <span class="out">Out</span>
+          <span class="hold2">Hold</span>
+        </div>
       </div>
     </div>
 
-    <!-- Eye toggle -->
-    <div class="eye-row">
-      <button id="eyeBtn" class="eye-btn" aria-label="Show or hide timer">
-        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-          <circle cx="12" cy="12" r="3"/>
+    <!-- Toggle: breathing icon <-> clock icon (hides/shows timer text only) -->
+    <div class="toggle-row">
+      <button id="toggleBtn" class="toggle-btn" aria-label="Toggle timer text">
+        <!-- Breathing icon (waves) -->
+        <svg id="breathIcon" class="icon-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12c2 0 2.5-3 5-3s3 3 5 3 2.5-3 5-3 3 3 3 3"></path>
+          <path d="M3 16c2 0 2.5-3 5-3s3 3 5 3 2.5-3 5-3 3 3 3 3"></path>
+        </svg>
+        <!-- Clock icon -->
+        <svg id="clockIcon" class="icon-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 3"></path>
         </svg>
       </button>
     </div>
@@ -211,6 +259,7 @@ html, body {
 
     <!-- Controls -->
     <div class="controls" id="controls">
+      <!-- Pause / Play -->
       <button class="circle-btn btn-emerald" id="pauseResume" aria-label="Pause or resume">
         <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="6.5" y="5" width="3.5" height="14" rx="1.2"></rect>
@@ -221,6 +270,7 @@ html, body {
         </svg>
       </button>
 
+      <!-- Reset -->
       <button class="circle-btn" id="reset" aria-label="Reset">
         <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 12a9 9 0 1 0 3-6.7"></path>
@@ -241,73 +291,73 @@ html, body {
 
 <script>
 let duration=0, remaining=0, running=false, completed=false;
-let endTime=null, wakeLock=null, rafId=null, lastShownWhole=null;
-let showTime=true;
+let endTime=null, rafId=null, lastShownWhole=null;
+let showTime=true; // controls visibility of numeric timer text
 
 const timeEl=document.getElementById('time');
-const breathEl=document.getElementById('breath');
 const ringProg=document.getElementById('ringProg');
 const controlsEl=document.getElementById('controls');
 const pauseResumeBtn=document.getElementById('pauseResume');
 const pauseIcon=document.getElementById('pauseIcon');
 const playIcon=document.getElementById('playIcon');
 const resetBtn=document.getElementById('reset');
-const eyeBtn=document.getElementById('eyeBtn');
+const toggleBtn=document.getElementById('toggleBtn');
+const breathIcon=document.getElementById('breathIcon');
+const clockIcon=document.getElementById('clockIcon');
 const liveEl=document.getElementById('live');
 
-const RADIUS=110;
-const CIRC=2*Math.PI*RADIUS;
+const RADIUS=110, CIRC=2*Math.PI*RADIUS;
 const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const clamp01=x=>Math.max(0,Math.min(1,x));
 
 function setRingColor(color){ ringProg.setAttribute('stroke', color); }
 
 function updateUI(){
-  // time visibility + breathing
+  // timer text visibility (breathing runs always)
   timeEl.classList.toggle('hidden', !showTime);
-  breathEl.classList.toggle('show', !showTime);
-  eyeBtn.classList.toggle('active', !showTime);
+  // toggle icon: show clock when time hidden (to indicate it will show time on tap)
+  breathIcon.style.display = showTime ? 'block' : 'none';
+  clockIcon.style.display  = showTime ? 'none'  : 'block';
 
-  // progress
+  // progress + pause/play icon
   const progress=duration>0?(duration-remaining)/duration:0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
 
-  // icons
   if(running){ pauseIcon.style.display='block'; playIcon.style.display='none'; }
   else       { pauseIcon.style.display='none';  playIcon.style.display='block'; }
 
   timeEl.textContent=fmt(remaining);
 }
 
-function cancelRAF(){if(rafId){cancelAnimationFrame(rafId); rafId=null;}}
-async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){} }
-function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&running) requestWakeLock(); });
-
+function cancelRAF(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
 function showControls(){ controlsEl.classList.add('show'); }
 function hideControls(){ controlsEl.classList.remove('show'); }
 
 function rafTick(){
   const now=Date.now();
   const remainingMs=endTime-now;
-  const remainingSec=Math.max(0,remainingMs/1000);
+  const remainingSec=Math.max(0, remainingMs/1000);
+
+  // smooth ring
   const progress=duration>0?clamp01((duration-remainingSec)/duration):0;
   ringProg.style.strokeDasharray=(CIRC*progress)+' '+CIRC;
 
+  // update shown seconds only when whole value changes
   const whole=Math.ceil(remainingSec);
   if(whole!==lastShownWhole){
     lastShownWhole=whole; remaining=whole;
     timeEl.textContent=fmt(remaining);
   }
+
   if(remainingMs<=0){
     cancelRAF(); running=false; completed=true;
     remaining=0; lastShownWhole=0;
     timeEl.textContent=fmt(0);
     liveEl.textContent='Time up';
     setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-done').trim() || '#34d399');
-    beep(); releaseWakeLock(); updateUI();
     return;
   }
+
   rafId=requestAnimationFrame(rafTick);
 }
 
@@ -316,35 +366,36 @@ function startWith(s){
   duration=s; remaining=s; completed=false; running=true;
   endTime=Date.now()+s*1000; lastShownWhole=Math.ceil(s);
   setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim() || '#f59e0b');
-  liveEl.textContent=''; updateUI(); showControls();
-  rafId=requestAnimationFrame(rafTick); requestWakeLock();
+  liveEl.textContent='';
+  updateUI();
+  showControls();
+  rafId=requestAnimationFrame(rafTick);
 }
+
 function pauseResume(){
   if(completed) return;
-  if(running){ running=false; cancelRAF(); releaseWakeLock(); }
-  else { running=true; endTime=Date.now()+(remaining*1000); lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick); requestWakeLock(); }
+  if(running){
+    running=false; cancelRAF();
+  } else {
+    running=true; endTime=Date.now()+(remaining*1000);
+    lastShownWhole=remaining; rafId=requestAnimationFrame(rafTick);
+  }
   updateUI();
 }
+
 function reset(){
   cancelRAF(); hideControls();
   duration=0; remaining=0; running=false; completed=false;
   lastShownWhole=null; liveEl.textContent='';
   setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim() || 'rgba(255,255,255,0.45)');
-  releaseWakeLock(); updateUI();
+  updateUI();
 }
 
-function beep(){
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator(); const g=ctx.createGain();
-    o.type='sine'; o.frequency.value=880;
-    o.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.0001,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.2,ctx.currentTime+0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.35);
-    o.start(); o.stop(ctx.currentTime+0.4);
-  }catch(e){}
-}
+// Toggle timer text (breathing continues regardless)
+toggleBtn.addEventListener('click', ()=>{
+  showTime = !showTime;
+  updateUI();
+});
 
 // Presets
 document.getElementById('btn-60').addEventListener('click',()=>startWith(60));
@@ -354,9 +405,6 @@ document.getElementById('btn-120').addEventListener('click',()=>startWith(120));
 // Controls
 pauseResumeBtn.addEventListener('click',pauseResume);
 resetBtn.addEventListener('click',reset);
-
-// Eye toggle
-eyeBtn.addEventListener('click', ()=>{ showTime=!showTime; updateUI(); });
 
 // External app buttons
 document.getElementById('whoopBtn').addEventListener('click',()=>{
