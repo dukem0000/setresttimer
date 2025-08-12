@@ -48,7 +48,6 @@ html, body {
   transition: all 0.4s ease;
 }
 
-/* Ring wrap */
 .ringWrap { position: relative; width: 240px; height: 240px; margin: 8px auto 8px; }
 .ringWrap > svg { position: relative; z-index: 0; }
 
@@ -64,29 +63,27 @@ html, body {
 /* Breathing animation */
 .breath {
   position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; z-index: 1;
-  opacity: .35; transform: scale(1); transition: opacity .25s ease, transform .25s ease;
+  opacity: .35;
 }
-.breath.focus { opacity: 1; transform: scale(1.05); }
 .breath-dot {
   width: 78px; height: 78px; border-radius: 50%;
   background: rgba(255,255,255,0.10);
   border: 2px solid rgba(255,255,255,0.85);
   box-shadow: 0 0 18px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.12);
+  animation: breatheSimple 6s ease-in-out infinite;
 }
 
-/* Keyframes for box breathing */
-@keyframes breatheBox {
+/* Simple breathe in/out keyframes */
+@keyframes breatheSimple {
   0%   { transform: scale(1); }
-  25%  { transform: scale(1.6); } /* Inhale */
-  50%  { transform: scale(1.6); } /* Hold */
-  75%  { transform: scale(1); }   /* Exhale */
-  100% { transform: scale(1); }   /* Hold */
+  50%  { transform: scale(1.6); }
+  100% { transform: scale(1); }
 }
 
 /* Whisper text */
 .whisper {
   position:absolute;
-  bottom: 28px; /* Now just above the ring stroke */
+  bottom: 28px;
   left:0; right:0;
   text-align:center;
   font-size: 13px; letter-spacing:.08em;
@@ -96,19 +93,6 @@ html, body {
   z-index: 3;
 }
 .whisper span { position:relative; opacity:1; }
-
-/* Eye toggle row */
-.eye-row { display:flex; justify-content:center; align-items:center; margin: 6px 0 8px; }
-.eye-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  display:flex; align-items:center; justify-content:center;
-  border: 1px solid rgba(255,255,255,.22);
-  background: rgba(255,255,255,0.10);
-  backdrop-filter: blur(10px);
-  cursor:pointer;
-  opacity: .85;
-}
-.eye-icon { width: 20px; height: 20px; }
 
 /* Presets */
 .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top: 6px; }
@@ -178,24 +162,15 @@ html, body {
           stroke-linecap="round" transform="rotate(-90 120 120)" style="stroke-dasharray: 0 691"/>
       </svg>
 
-      <div class="breath" id="breath">
-        <div class="breath-dot" id="breathDot"></div>
+      <div class="breath">
+        <div class="breath-dot"></div>
       </div>
 
       <div class="whisper" id="whisper">
-        <span id="phaseText"></span>
+        <span id="phaseText">In</span>
       </div>
 
       <div class="time" id="time">0:00</div>
-    </div>
-
-    <div class="eye-row">
-      <button id="eyeBtn" class="eye-btn">
-        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
     </div>
 
     <div class="grid3">
@@ -232,25 +207,19 @@ html, body {
 
 <script>
 let duration=0, remaining=0, running=false, completed=false, endTime=null, rafId=null;
-let showTime=true, breathingStarted=false, phaseIndex=0, phaseTimer=null;
-const phases=["In","Hold","Out","Hold"];
-
+let showTime=true;
 const timeEl=document.getElementById('time');
 const ringProg=document.getElementById('ringProg');
-const breathDot=document.getElementById('breathDot');
 const phaseText=document.getElementById('phaseText');
 const pauseIcon=document.getElementById('pauseIcon');
 const playIcon=document.getElementById('playIcon');
 const controlsEl=document.getElementById('controls');
 const RADIUS=110, CIRC=2*Math.PI*RADIUS;
 
+let ding=new Audio('data:audio/mp3;base64,SUQzAwAAAAAAF1RTU0UAAAAPAAADTGF2ZjU2LjI1LjEwNAAAAAAAAAAAAAAA//tQxAADBpAAAAgAAAACAAADSAAAAAAABAAADSAAAAAAABAAADSAAAAAAABAAgAZGF0YcQAAAAA');
+
 function setRingColor(c){ ringProg.setAttribute('stroke',c); }
 function fmt(s){ return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
-
-function updateUI(){
-  timeEl.classList.toggle('hidden',!showTime);
-  document.getElementById('breath').classList.toggle('focus',!showTime);
-}
 
 function rafTick(){
   const now=Date.now(), remMs=endTime-now, remSec=Math.max(0, remMs/1000);
@@ -261,6 +230,7 @@ function rafTick(){
     cancelAnimationFrame(rafId); running=false; completed=true;
     remaining=0; timeEl.textContent=fmt(0);
     setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-done').trim());
+    ding.play();
     return;
   }
   rafId=requestAnimationFrame(rafTick);
@@ -271,18 +241,7 @@ function startWith(s){
   endTime=Date.now()+s*1000;
   setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-active').trim());
   controlsEl.classList.add('show');
-  updateUI();
-  if(!breathingStarted){ startBreathing(); breathingStarted=true; }
   rafId=requestAnimationFrame(rafTick);
-}
-
-function startBreathing(){
-  breathDot.style.animation='breatheBox 16s ease-in-out infinite';
-  phaseText.textContent=phases[0]; phaseText.style.opacity=1;
-  phaseTimer=setInterval(()=>{
-    phaseIndex=(phaseIndex+1)%phases.length;
-    phaseText.textContent=phases[phaseIndex];
-  },4000);
 }
 
 function pauseResume(){
@@ -303,15 +262,9 @@ function reset(){
   timeEl.textContent='0:00';
 }
 
-document.getElementById('eyeBtn').addEventListener('click',()=>{
-  if(showTime){
-    timeEl.classList.add('hidden');
-    showTime=false; updateUI();
-  } else {
-    showTime=true;
-    timeEl.classList.remove('hidden');
-    updateUI();
-  }
+timeEl.addEventListener('click',()=>{
+  showTime=!showTime;
+  timeEl.classList.toggle('hidden',!showTime);
 });
 
 document.getElementById('btn-60').onclick=()=>startWith(60);
@@ -323,7 +276,13 @@ document.getElementById('whoopBtn').onclick=()=>window.location='whoop://';
 document.getElementById('notesBtn').onclick=()=>window.location='mobilenotes://';
 
 setRingColor(getComputedStyle(document.documentElement).getPropertyValue('--ring-neutral').trim());
-updateUI();
+
+// Phase text for 3s in/out
+let breathingPhases=["In","Out"], bpIndex=0;
+setInterval(()=>{
+  bpIndex=(bpIndex+1)%breathingPhases.length;
+  phaseText.textContent=breathingPhases[bpIndex];
+},3000);
 </script>
 </body>
 </html>
